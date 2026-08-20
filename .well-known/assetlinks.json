@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "io.github.goriraaa1121_web.twa",
+    "sha256_cert_fingerprints": [
+      "C9:E0:47:41:1F:2A:B3:FD:10:42:D0:BA:15:1A:60:25:C1:9F:0F:B7:44:77:9E:52:5F:AB:87:34:14:2B:23:53"
+    ]
+  }
+}]
