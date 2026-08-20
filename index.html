@@ -1,0 +1,2768 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#F7FAF9">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="健康教练">
+<meta name="description" content="个人健康教练 PWA — 运动计划、经期管理、健康数据追踪">
+<title>健康教练</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+/* ============ 设计变量 ============ */
+:root{
+  --primary:#2A9D7E;
+  --primary-light:#8AE2C9;
+  --primary-lighter:#D4F3EC;
+  --primary-dark:#155A47;
+  --bg:#F7FAF9;
+  --card:#FFFFFF;
+  --text:#1B2B27;
+  --text-2:#6B7C78;
+  --text-3:#9AAAA5;
+  --border:#EAF1ED;
+  --danger:#E63946;
+  --warning:#E76F51;
+  --orange:#F4A261;
+  --pink:#FF8FA3;
+  --pink-soft:#FFD6DD;
+  --shadow:0 1px 3px rgba(31,122,96,0.04);
+  --shadow-md:0 2px 8px rgba(31,122,96,0.06);
+  --shadow-lg:0 8px 24px rgba(31,122,96,0.08);
+  --radius:18px;
+  --radius-sm:13px;
+  --radius-xs:9px;
+  --tab-h:64px;
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:'Noto Sans SC',-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  font-size:15px;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  overscroll-behavior-y:none;
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;font-size:inherit}
+input,select,textarea{font-family:inherit;font-size:inherit;color:var(--text)}
+input::placeholder{color:var(--text-3)}
+.hidden{display:none!important}
+.app{
+  max-width:480px;
+  margin:0 auto;
+  min-height:100vh;
+  min-height:100dvh;
+  background:var(--bg);
+  position:relative;
+  padding-bottom:calc(var(--tab-h) + var(--safe-bottom) + 10px);
+}
+
+/* ============ 顶部标题区 ============ */
+.page-head{
+  padding:18px 18px 6px;
+}
+.page-title{
+  font-size:24px;
+  font-weight:900;
+  letter-spacing:-.5px;
+  color:var(--primary-dark);
+}
+.page-sub{
+  font-size:12.5px;
+  color:var(--text-2);
+  margin-top:2px;
+}
+
+/* ============ 卡片 ============ */
+.card{
+  background:var(--card);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:16px;
+  margin:0 14px 12px;
+}
+.card-title{
+  font-size:14px;
+  font-weight:700;
+  color:var(--primary-dark);
+  display:flex;
+  align-items:center;
+  gap:7px;
+  margin-bottom:12px;
+}
+.card-title .dot{
+  width:4px;height:16px;border-radius:3px;background:var(--primary-light);
+}
+.card-title .more{margin-left:auto;font-size:12px;color:var(--text-3);font-weight:400}
+
+/* ============ 底部 Tab 栏 ============ */
+.tab-bar{
+  position:fixed;
+  left:0;right:0;bottom:0;
+  max-width:480px;
+  margin:0 auto;
+  height:calc(var(--tab-h) + var(--safe-bottom));
+  padding-bottom:var(--safe-bottom);
+  background:rgba(255,255,255,0.92);
+  backdrop-filter:saturate(180%) blur(18px);
+  -webkit-backdrop-filter:saturate(180%) blur(18px);
+  border-top:1px solid var(--border);
+  display:flex;
+  z-index:50;
+}
+.tab-btn{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+  color:var(--text-3);
+  font-size:11px;
+  font-weight:500;
+  transition:color .2s;
+  padding-top:6px;
+}
+.tab-btn svg{width:23px;height:23px;transition:transform .2s}
+.tab-btn.active{color:var(--primary)}
+.tab-btn.active svg{transform:translateY(-1px) scale(1.06)}
+.tab-btn.active svg path,.tab-btn.active svg circle,.tab-btn.active svg rect{fill:currentColor}
+
+/* ============ Tab 内容切换动画 ============ */
+.tab-content{display:none;animation:fadeUp .28s ease}
+.tab-content.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+
+/* ============ 通用按钮 ============ */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  padding:13px 18px;
+  border-radius:13px;
+  font-weight:700;
+  font-size:15px;
+  transition:transform .12s,box-shadow .2s,background .2s;
+  width:100%;
+}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--primary);color:#fff;box-shadow:0 4px 12px rgba(31,122,96,0.20)}
+.btn-primary:active{box-shadow:0 2px 6px rgba(31,122,96,0.16)}
+.btn-light{background:var(--primary-lighter);color:var(--primary-dark)}
+.btn-ghost{background:#fff;color:var(--primary);border:1.5px solid var(--border)}
+.btn-danger{background:#fff;color:var(--danger);border:1.5px solid #f3c7cb}
+.btn-sm{padding:9px 14px;font-size:13px;border-radius:10px;width:auto}
+.btn-line{background:transparent;color:var(--text-2);font-weight:500;border:1px solid var(--border)}
+
+/* ============ 今日 - 打卡卡 ============ */
+.checkin-card{
+  margin:14px;
+  border-radius:var(--radius);
+  background:linear-gradient(135deg,#E8F8F4 0%,#D4F3EC 100%);
+  color:var(--primary-dark);
+  padding:18px 18px 16px;
+  position:relative;
+  overflow:hidden;
+  box-shadow:0 4px 16px rgba(31,122,96,0.08);
+  border:1px solid rgba(138,226,201,0.3);
+}
+.checkin-card::after{
+  content:"";position:absolute;right:-30px;top:-30px;
+  width:140px;height:140px;border-radius:50%;
+  background:rgba(138,226,201,.12);
+}
+.checkin-card::before{
+  content:"";position:absolute;right:20px;bottom:-40px;
+  width:90px;height:90px;border-radius:50%;
+  background:rgba(138,226,201,.08);
+}
+.checkin-date{font-size:13px;opacity:.7;font-weight:500}
+.checkin-main{display:flex;align-items:flex-end;gap:14px;margin-top:8px;position:relative;z-index:1}
+.checkin-main .big{font-size:30px;font-weight:900;line-height:1;letter-spacing:-.5px;color:var(--primary-dark)}
+.checkin-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;position:relative;z-index:1}
+.chip{
+  background:rgba(138,226,201,.25);
+  padding:4px 10px;border-radius:20px;font-size:11.5px;font-weight:600;color:var(--primary-dark);
+  backdrop-filter:blur(4px);
+}
+.checkin-streak{position:relative;z-index:1;margin-top:10px;font-size:12px;opacity:.7;display:flex;align-items:center;gap:5px}
+
+/* 完成度环 */
+.completion-ring{display:flex;align-items:center;gap:16px}
+.ring-wrap{position:relative;width:74px;height:74px;flex-shrink:0}
+.ring-wrap svg{transform:rotate(-90deg)}
+.ring-wrap .ring-text{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:18px;font-weight:900;color:var(--primary);
+}
+.completion-info .lbl{font-size:12px;color:var(--text-2)}
+.completion-info .val{font-size:16px;font-weight:700;color:var(--text);margin-top:2px}
+.completion-info .val b{color:var(--primary)}
+
+/* 经期调整横幅 */
+.period-banner{
+  margin:0 14px 12px;
+  background:linear-gradient(90deg,#FFE5EC 0%,#FFD6DD 100%);
+  color:#B8456A;
+  border-radius:13px;
+  padding:11px 14px;
+  font-size:12.5px;
+  font-weight:600;
+  display:flex;align-items:center;gap:8px;
+}
+.period-banner svg{width:17px;height:17px;flex-shrink:0}
+
+/* ============ 今日训练清单 ============ */
+.checklist-group{margin-bottom:10px}
+.checklist-group:last-child{margin-bottom:0}
+.group-label{
+  font-size:11.5px;font-weight:700;color:var(--text-3);
+  letter-spacing:1px;margin-bottom:7px;text-transform:uppercase;
+  display:flex;align-items:center;gap:6px;
+}
+.group-label .gtag{
+  display:inline-block;width:7px;height:7px;border-radius:50%;
+}
+.checklist-item{
+  display:flex;align-items:center;gap:11px;
+  padding:11px 8px;
+  border-radius:11px;
+  transition:background .15s;
+  position:relative;
+}
+.checklist-item + .checklist-item{border-top:1px solid var(--border)}
+.checklist-item.skipped{opacity:.45}
+.checklist-item .cbox{
+  width:22px;height:22px;border-radius:7px;border:2px solid var(--border);
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  transition:all .15s;
+}
+.checklist-item .cbox svg{width:13px;height:13px;color:#fff;opacity:0;transform:scale(.5);transition:all .15s}
+.checklist-item.done .cbox{background:var(--primary);border-color:var(--primary)}
+.checklist-item.done .cbox svg{opacity:1;transform:scale(1)}
+.ci-body{flex:1;min-width:0}
+.ci-name{font-size:14.5px;font-weight:600;color:var(--text)}
+.ci-desc{font-size:11.5px;color:var(--text-2);margin-top:1px}
+.ci-desc b{color:var(--primary);font-weight:600}
+.ci-desc .skip-tag{color:var(--pink);font-weight:600}
+.ci-toggle{
+  display:inline-flex;margin-top:5px;
+  border:1px solid var(--border);border-radius:8px;overflow:hidden;
+}
+.ci-toggle button{
+  padding:3px 9px;font-size:11px;font-weight:600;color:var(--text-2);
+  transition:all .12s;
+}
+.ci-toggle button.on{background:var(--primary);color:#fff}
+.ci-toggle button + button{border-left:1px solid var(--border)}
+.ci-arrow{color:var(--text-3);flex-shrink:0;padding-left:4px}
+.ci-arrow svg{width:18px;height:18px}
+
+/* ============ 模块切换：按计划/跟练视频 ============ */
+.module-toggle{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-left:auto;flex-shrink:0}
+.module-toggle button{padding:3px 9px;font-size:11px;font-weight:600;color:var(--text-2);transition:all .12s;background:#fff;border:none;cursor:pointer}
+.module-toggle button.on{background:var(--primary);color:#fff}
+.module-toggle button + button{border-left:1px solid var(--border)}
+
+/* 可折叠的跟练视频区域 */
+.vid-options{max-height:0;overflow:hidden;transition:max-height .35s ease;margin:0}
+.vid-options.expanded{max-height:800px}
+.vid-options-inner{padding:6px 0 4px 20px}
+.vid-options-inner .vo-label{font-size:11px;color:var(--text-3);margin-bottom:4px}
+
+/* 置灰的训练项 */
+.checklist-item.grayed{opacity:.4;pointer-events:none}
+.checklist-item.grayed .cbox{background:var(--border);border-color:var(--border)}
+
+/* 完整替代区域 */
+.full-replace{margin:10px 14px;padding:14px;background:linear-gradient(135deg,#E8F8F4,#D4F3EC);border-radius:14px;border:2px dashed rgba(138,226,201,0.6);transition:all .2s}
+.full-replace.active{border-style:solid;border-color:var(--primary);background:linear-gradient(135deg,#D4F3EC,#B7E4C7)}
+.full-replace .fr-title{font-size:14px;font-weight:700;color:var(--primary-dark);display:flex;align-items:center;gap:6px}
+.full-replace .fr-desc{font-size:11.5px;color:var(--text-2);margin-top:4px;line-height:1.5}
+.fr-vid-list{margin-top:8px}
+.fr-vid-card{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;background:#fff;border:1px solid var(--border);margin-top:4px;cursor:pointer;transition:all .15s}
+.fr-vid-card.selected{border-color:var(--primary);background:var(--primary-lighter)}
+.fr-vid-thumb{width:48px;height:30px;border-radius:6px;background:var(--primary);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:9px;font-weight:600}
+.fr-vid-info{flex:1;min-width:0}
+.fr-vid-title{font-size:11.5px;font-weight:600;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fr-vid-meta{font-size:9.5px;color:var(--text-3);margin-top:1px}
+
+/* 模块内视频卡片 */
+.mod-vid-card{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;background:#F5FBF9;border:1px solid var(--border);margin-top:4px;cursor:pointer;transition:all .15s}
+.mod-vid-card.selected{border-color:var(--primary);background:var(--primary-lighter)}
+.mod-vid-thumb{width:48px;height:30px;border-radius:6px;background:var(--primary);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:9px;font-weight:600}
+.mod-vid-info{flex:1;min-width:0}
+.mod-vid-title{font-size:11.5px;font-weight:600;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mod-vid-meta{font-size:9.5px;color:var(--text-3);margin-top:1px}
+.mod-vid-check{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.mod-vid-card.selected .mod-vid-check{background:var(--primary);border-color:var(--primary)}
+.mod-vid-check svg{width:11px;height:11px;color:#fff;opacity:0;transition:all .15s}
+.mod-vid-card.selected .mod-vid-check svg{opacity:1}
+
+/* ============ 经期状态卡 ============ */
+.period-status{display:flex;align-items:center;gap:14px}
+.ps-circle{
+  width:62px;height:62px;border-radius:50%;flex-shrink:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  color:#fff;font-weight:700;
+}
+.ps-circle .num{font-size:20px;line-height:1}
+.ps-circle .unit{font-size:10px;opacity:.9;margin-top:1px}
+.ps-info .t{font-size:14px;font-weight:700}
+.ps-info .d{font-size:12px;color:var(--text-2);margin-top:2px}
+.ps-info .badge{
+  display:inline-block;margin-top:5px;padding:2px 9px;border-radius:20px;
+  font-size:11px;font-weight:600;
+}
+
+/* ============ 二级页面 (覆盖层) ============ */
+.secondary{
+  position:fixed;
+  inset:0;
+  z-index:80;
+  background:var(--bg);
+  max-width:480px;margin:0 auto;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  transform:translateX(100%);
+  transition:transform .26s cubic-bezier(.4,0,.2,1);
+  display:flex;flex-direction:column;
+}
+.secondary.show{transform:translateX(0)}
+.sec-head{
+  position:sticky;top:0;z-index:5;
+  background:rgba(247,250,249,.92);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  padding:14px 14px 10px;
+  display:flex;align-items:center;gap:10px;
+  border-bottom:1px solid var(--border);
+}
+.sec-back{padding:6px;border-radius:10px;display:flex}
+.sec-back svg{width:22px;height:22px;color:var(--primary-dark)}
+.sec-title{font-size:17px;font-weight:800;color:var(--primary-dark);flex:1}
+.sec-body{padding:16px 14px calc(20px + var(--safe-bottom));flex:1}
+
+/* ============ 运动详情页 ============ */
+.ex-hero{
+  background:linear-gradient(135deg,#E8F8F4 0%,#D4F3EC 100%);
+  color:var(--primary-dark);border-radius:var(--radius);padding:18px;
+  box-shadow:0 4px 16px rgba(31,122,96,0.08);
+  border:1px solid rgba(138,226,201,0.3);
+}
+.ex-hero .name{font-size:22px;font-weight:900;letter-spacing:-.3px}
+.ex-hero .target{
+  display:inline-block;margin-top:8px;background:rgba(138,226,201,.3);
+  padding:3px 11px;border-radius:20px;font-size:12px;font-weight:600;color:var(--primary-dark);
+}
+.ex-benefit{
+  margin-top:12px;font-size:13px;line-height:1.6;opacity:.75;
+}
+.ex-section{margin-top:14px}
+.ex-section h4{
+  font-size:13px;font-weight:700;color:var(--primary-dark);
+  margin-bottom:9px;display:flex;align-items:center;gap:6px;
+}
+.ex-section h4 .ln{width:3px;height:13px;border-radius:2px;background:var(--primary-light)}
+.ex-card-box{background:#fff;border-radius:var(--radius-sm);padding:14px;box-shadow:var(--shadow)}
+.sr-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.sr-item{text-align:center;background:var(--bg);border-radius:10px;padding:10px 4px}
+.sr-item .v{font-size:16px;font-weight:800;color:var(--primary)}
+.sr-item .k{font-size:11px;color:var(--text-2);margin-top:2px}
+.step-list{counter-reset:step}
+.step-item{
+  display:flex;gap:11px;padding:10px 0;
+}
+.step-item + .step-item{border-top:1px solid var(--border)}
+.step-num{
+  flex-shrink:0;width:26px;height:26px;border-radius:50%;
+  background:var(--primary-lighter);color:var(--primary-dark);
+  font-weight:800;font-size:13px;
+  display:flex;align-items:center;justify-content:center;
+}
+.step-item .st{font-size:14px;font-weight:700;color:var(--text)}
+.step-item .sd{font-size:12.5px;color:var(--text-2);margin-top:2px;line-height:1.55}
+.warn-box{
+  background:#FFF5F0;border:1px solid #FFE0D0;border-radius:12px;
+  padding:12px;color:#C44521;font-size:12.5px;line-height:1.6;
+  display:flex;gap:9px;
+}
+.warn-box svg{width:18px;height:18px;flex-shrink:0;margin-top:1px;color:var(--warning)}
+
+/* ============ 跟练模式 (Workout) ============ */
+.workout{
+  position:fixed;inset:0;z-index:90;
+  max-width:480px;margin:0 auto;
+  background:linear-gradient(180deg,#F7FAF9 0%,#E8F8F4 50%,#D4F3EC 100%);
+  color:var(--primary-dark);display:flex;flex-direction:column;
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
+}
+.workout.show{transform:translateY(0)}
+.wo-head{padding:16px 16px 4px;display:flex;align-items:center;gap:10px}
+.wo-head .close{padding:6px;border-radius:10px;background:rgba(138,226,201,.2)}
+.wo-head .close svg{width:22px;height:22px;color:var(--primary-dark);display:block}
+.wo-head .t{font-size:15px;font-weight:700;flex:1}
+.wo-exname{padding:0 20px 8px;font-size:13px;opacity:.6;text-align:center}
+.wo-timer-wrap{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:10px 20px;
+}
+.wo-mode-row{display:flex;gap:8px;margin-bottom:18px}
+.wo-mode{
+  padding:6px 16px;border-radius:20px;font-size:12px;font-weight:600;
+  background:rgba(138,226,201,.15);color:var(--text-2);
+  transition:all .15s;
+}
+.wo-mode.on{background:var(--primary);color:#fff}
+.wo-time{
+  font-size:78px;font-weight:200;font-variant-numeric:tabular-nums;
+  letter-spacing:-2px;line-height:1;color:var(--primary-dark);
+  text-shadow:none;
+}
+.wo-sub{font-size:13px;opacity:.55;margin-top:8px;min-height:18px}
+.wo-progress{
+  width:100%;max-width:300px;margin-top:22px;
+}
+.wo-progress .bar{
+  height:7px;border-radius:4px;background:rgba(138,226,201,.25);overflow:hidden;
+}
+.wo-progress .fill{height:100%;background:var(--primary);border-radius:4px;transition:width .3s}
+.wo-progress .sets-txt{display:flex;justify-content:space-between;margin-top:7px;font-size:11.5px;opacity:.55}
+.wo-actions{
+  padding:18px 20px calc(20px + var(--safe-bottom));
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;
+}
+.wo-actions .btn-wide{grid-column:span 2}
+.wo-btn{
+  padding:14px;border-radius:14px;font-weight:700;font-size:14px;
+  background:rgba(138,226,201,.12);color:var(--primary-dark);
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  transition:transform .12s,background .15s;
+}
+.wo-btn:active{transform:scale(.97)}
+.wo-btn svg{width:20px;height:20px}
+.wo-btn.primary{background:var(--primary);color:#fff}
+.wo-btn.danger{background:rgba(230,57,70,.12);color:var(--danger)}
+
+/* ============ 视频推荐页 ============ */
+.vid-section{margin-top:16px}
+.vid-section h4{
+  font-size:13px;font-weight:700;color:var(--primary-dark);
+  margin-bottom:9px;display:flex;align-items:center;gap:6px;
+}
+.vid-section h4 .ln{width:3px;height:13px;border-radius:2px;background:var(--primary-light)}
+.vid-section .hint{font-size:11.5px;color:var(--text-2);font-weight:400;margin-left:6px}
+.vid-card{
+  display:flex;gap:11px;background:#fff;border-radius:13px;padding:10px;
+  box-shadow:var(--shadow);margin-bottom:9px;align-items:center;
+  transition:transform .12s;
+}
+.vid-card:active{transform:scale(.99)}
+.vid-thumb{
+  width:96px;height:60px;border-radius:9px;flex-shrink:0;
+  background:linear-gradient(135deg,#8AE2C9,var(--primary));
+  position:relative;display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+}
+.vid-thumb .play{
+  width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.85);
+  display:flex;align-items:center;justify-content:center;
+}
+.vid-thumb .play svg{width:13px;height:13px;color:var(--primary);margin-left:2px}
+.vid-thumb .dur{
+  position:absolute;bottom:3px;right:4px;
+  background:rgba(0,0,0,.65);color:#fff;font-size:9.5px;font-weight:600;
+  padding:1px 5px;border-radius:4px;
+}
+.vid-body{flex:1;min-width:0}
+.vid-title{font-size:13px;font-weight:600;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.vid-meta{font-size:11px;color:var(--text-2);margin-top:4px;display:flex;gap:8px}
+.vid-meta .v{color:var(--primary)}
+.vid-tags{margin-top:5px;display:flex;gap:4px;flex-wrap:wrap}
+.vid-tag{font-size:10px;color:var(--primary-dark);background:var(--primary-lighter);padding:1px 6px;border-radius:8px}
+
+/* ============ 数据 Tab ============ */
+.stat-row{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+.stat-big{font-size:30px;font-weight:900;color:var(--text);line-height:1}
+.stat-big .u{font-size:13px;font-weight:500;color:var(--text-2);margin-left:3px}
+.stat-change{font-size:12px;font-weight:600;padding:3px 9px;border-radius:20px}
+.stat-change.down{background:#E0F5EF;color:#155A47}
+.stat-change.up{background:#FFF0EC;color:#C44521}
+.stat-change.flat{background:var(--bg);color:var(--text-2)}
+.mini-chart{display:flex;align-items:flex-end;gap:3px;height:46px;margin-top:12px}
+.mini-bar{flex:1;background:var(--primary-lighter);border-radius:3px 3px 0 0;min-height:3px;position:relative;transition:height .3s}
+.mini-bar.last{background:var(--primary)}
+.mini-bar .tip{
+  position:absolute;top:-16px;left:50%;transform:translateX(-50%);
+  font-size:9.5px;color:var(--text-2);white-space:nowrap;
+}
+.bp-reading{font-size:26px;font-weight:900;color:var(--text)}
+.bp-reading .slash{color:var(--text-3);margin:0 2px}
+.bp-badge{display:inline-block;padding:3px 11px;border-radius:20px;font-size:12px;font-weight:600;margin-top:6px}
+.bp-badge.normal{background:#E0F5EF;color:#155A47}
+.bp-badge.elevated{background:#FFF4E0;color:#B5740A}
+.bp-badge.high1{background:#FFE9DC;color:#C75A2A}
+.bp-badge.high2{background:#FFE0E0;color:#C0271F}
+
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:4px}
+.wg-cell{
+  aspect-ratio:1;border-radius:9px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;font-size:10px;
+}
+.wg-cell .d{font-weight:700}
+.wg-cell.done{background:var(--primary);color:#fff}
+.wg-cell.miss{background:var(--bg);color:var(--text-3)}
+.wg-cell.today{outline:2px solid var(--primary-light);outline-offset:1px}
+
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:10px}
+.cal-dow{font-size:11px;color:var(--text-3);text-align:center;font-weight:600;padding-bottom:4px}
+.cal-cell{
+  aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;
+  font-size:12px;color:var(--text);position:relative;
+}
+.cal-cell.empty{background:transparent}
+.cal-cell.period{background:var(--pink-soft);color:#B8456A;font-weight:600}
+.cal-cell.dyro{background:#D6EAF8;color:#2471A3;font-weight:600}
+.cal-cell.period.dyro{background:linear-gradient(135deg,var(--pink-soft) 50%,#D6EAF8 50%);color:#B8456A;font-weight:600}
+.cal-cell.today{box-shadow:inset 0 0 0 2px var(--primary);font-weight:800}
+.cal-cell.today.period{box-shadow:inset 0 0 0 2px var(--primary)}
+.cal-cell.today.dyro{box-shadow:inset 0 0 0 2px var(--primary);font-weight:800}
+.cal-month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.cal-month-nav .m{font-size:14px;font-weight:700;color:var(--primary-dark)}
+.cal-nav-btn{padding:5px 11px;border-radius:9px;background:var(--bg);font-size:13px;color:var(--primary);font-weight:600}
+
+.history-item{display:flex;align-items:center;gap:11px;padding:11px 0;border-top:1px solid var(--border)}
+.history-item:first-child{border-top:none}
+.hi-date{flex-shrink:0;width:44px;text-align:center}
+.hi-date .dd{font-size:17px;font-weight:800;color:var(--primary-dark);line-height:1}
+.hi-date .mm{font-size:10px;color:var(--text-3);margin-top:1px}
+.hi-body{flex:1;min-width:0}
+.hi-comp{font-size:13px;font-weight:600}
+.hi-meta{font-size:11.5px;color:var(--text-2);margin-top:2px}
+.hi-feel{
+  font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;
+}
+.hi-feel.easy{background:#E0F5EF;color:#155A47}
+.hi-feel.ok{background:#E8F0FE;color:#2A5599}
+.hi-feel.hard{background:#FFF4E0;color:#B5740A}
+.hi-feel.uncomfortable{background:#FFE0E0;color:#C0271F}
+.empty-tip{text-align:center;color:var(--text-3);font-size:13px;padding:20px 0}
+
+/* ============ 计划 Tab ============ */
+.phase-overview{
+  background:linear-gradient(135deg,#E8F8F4 0%,#D4F3EC 100%);
+  color:var(--primary-dark);border-radius:var(--radius);padding:18px;
+  box-shadow:0 4px 16px rgba(31,122,96,0.08);
+  border:1px solid rgba(138,226,201,0.3);
+}
+.phase-overview .lbl{font-size:12px;opacity:.9;font-weight:500}
+.phase-overview .name{font-size:21px;font-weight:900;margin-top:3px}
+.phase-overview .wk{font-size:12px;opacity:.9;margin-top:3px}
+.phase-overview .desc{font-size:12.5px;opacity:.95;margin-top:10px;line-height:1.6}
+.week-sched{display:flex;flex-direction:column;gap:9px;margin-top:4px}
+.day-card{
+  background:#fff;border-radius:13px;padding:12px 13px;box-shadow:var(--shadow);
+  display:flex;align-items:center;gap:12px;
+}
+.day-card.today{box-shadow:0 0 0 2px var(--primary-light),var(--shadow)}
+.day-card .dow{
+  flex-shrink:0;width:40px;text-align:center;
+}
+.day-card .dow .nm{font-size:11px;color:var(--text-3);font-weight:600}
+.day-card .dow .dt{font-size:18px;font-weight:800;color:var(--text);margin-top:1px}
+.day-card.today .dow .dt{color:var(--primary)}
+.day-body{flex:1;min-width:0}
+.day-type{font-size:13px;font-weight:700;color:var(--primary-dark)}
+.day-type.rest{color:var(--text-2)}
+.day-content{font-size:11.5px;color:var(--text-2);margin-top:2px}
+.day-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.day-dot.cardio_resistance{background:var(--primary)}
+.day-dot.cardio_focus{background:var(--primary-light)}
+.day-dot.recovery{background:var(--primary-lighter)}
+.day-dot.rest{background:var(--border)}
+
+.timeline{display:flex;align-items:flex-start;gap:0;margin-top:6px}
+.tl-phase{flex:1;text-align:center;position:relative;cursor:pointer}
+.tl-phase .dot{
+  width:22px;height:22px;border-radius:50%;background:#fff;border:3px solid var(--border);
+  margin:0 auto 6px;transition:all .2s;
+}
+.tl-phase.done .dot{background:var(--primary-light);border-color:var(--primary-light)}
+.tl-phase.current .dot{background:var(--primary);border-color:var(--primary);box-shadow:0 0 0 4px rgba(138,226,201,0.30)}
+.tl-phase.viewing .dot{border-color:var(--primary-dark);border-style:dashed;box-shadow:0 0 0 3px rgba(31,122,96,0.10)}
+.tl-phase.viewing.current .dot{background:var(--primary);border-style:solid}
+.tl-phase::after{
+  content:"";position:absolute;top:11px;left:50%;width:100%;height:3px;background:var(--border);
+}
+.tl-phase:last-child::after{display:none}
+.tl-phase.done::after{background:var(--primary-light)}
+.tl-phase .nm{font-size:10.5px;color:var(--text-2);font-weight:600;line-height:1.3}
+.tl-phase.current .nm{color:var(--primary);font-weight:700}
+.tl-phase.viewing .nm{color:var(--primary-dark);font-weight:700}
+.tl-phase .wk{font-size:9.5px;color:var(--text-3);margin-top:1px}
+
+/* ============ 我的 Tab ============ */
+.profile-section{margin:0 14px 12px}
+.profile-group{
+  background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;
+}
+.pg-row{
+  display:flex;align-items:center;gap:11px;padding:14px 15px;
+  transition:background .12s;
+}
+.pg-row + .pg-row{border-top:1px solid var(--border)}
+.pg-row:active{background:var(--bg)}
+.pg-icon{
+  width:32px;height:32px;border-radius:9px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--primary-lighter);
+}
+.pg-icon svg{width:17px;height:17px;color:var(--primary-dark)}
+.pg-body{flex:1;min-width:0}
+.pg-title{font-size:14px;font-weight:600;color:var(--text)}
+.pg-desc{font-size:11.5px;color:var(--text-2);margin-top:1px}
+.pg-val{font-size:13px;color:var(--text-2);font-weight:500}
+.pg-arrow{color:var(--text-3)}
+.pg-arrow svg{width:18px;height:18px}
+
+/* 开关 */
+.switch{
+  position:relative;width:44px;height:25px;flex-shrink:0;
+}
+.switch input{opacity:0;width:0;height:0;position:absolute}
+.switch .slider{
+  position:absolute;inset:0;background:#D8E0DA;border-radius:20px;transition:.22s;cursor:pointer;
+}
+.switch .slider::before{
+  content:"";position:absolute;width:21px;height:21px;left:2px;top:2px;
+  background:#fff;border-radius:50%;transition:.22s;box-shadow:0 1px 3px rgba(0,0,0,.2);
+}
+.switch input:checked + .slider{background:var(--primary)}
+.switch input:checked + .slider::before{transform:translateX(19px)}
+
+/* 健康档案只读 */
+.health-stat{display:flex;justify-content:space-between;padding:11px 15px;border-top:1px solid var(--border)}
+.health-stat:first-child{border-top:none}
+.health-stat .k{font-size:13px;color:var(--text-2)}
+.health-stat .v{font-size:13px;font-weight:600;color:var(--text)}
+
+/* ============ 模态框 ============ */
+.modal-mask{
+  position:fixed;inset:0;z-index:100;
+  background:rgba(15,40,30,.30);backdrop-filter:blur(3px);
+  display:flex;align-items:flex-end;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.modal-mask.show{opacity:1;pointer-events:auto}
+.modal{
+  background:#fff;width:100%;max-width:480px;
+  border-radius:22px 22px 0 0;padding:20px 18px calc(20px + var(--safe-bottom));
+  transform:translateY(100%);transition:transform .26s cubic-bezier(.4,0,.2,1);
+  max-height:90vh;overflow-y:auto;
+}
+.modal-mask.show .modal{transform:translateY(0)}
+.modal-head{display:flex;align-items:center;margin-bottom:16px}
+.modal-title{font-size:17px;font-weight:800;color:var(--primary-dark);flex:1}
+.modal-close{padding:5px;border-radius:9px}
+.modal-close svg{width:22px;height:22px;color:var(--text-2)}
+.field{margin-bottom:14px}
+.field-label{font-size:13px;font-weight:600;color:var(--text);margin-bottom:7px;display:block}
+.field-label .req{color:var(--danger)}
+.seg{display:flex;gap:7px;flex-wrap:wrap}
+.seg button{
+  flex:1;min-width:60px;padding:11px 6px;border-radius:11px;
+  border:1.5px solid var(--border);font-weight:600;font-size:13px;color:var(--text-2);
+  transition:all .12s;
+}
+.seg button.on{background:var(--primary);border-color:var(--primary);color:#fff}
+.input-box{
+  width:100%;padding:13px;border:1.5px solid var(--border);border-radius:11px;
+  font-size:15px;outline:none;transition:border-color .15s;background:#fff;
+}
+.input-box:focus{border-color:var(--primary-light)}
+.input-row{display:flex;gap:9px;align-items:center}
+.input-row .input-box{flex:1;text-align:center}
+.input-row .sep{color:var(--text-3);font-size:18px;font-weight:300}
+.modal-actions{display:flex;gap:10px;margin-top:6px}
+.modal-actions .btn{flex:1}
+
+/* 反馈弹窗 - 庆祝 */
+.celebrate{display:flex;flex-direction:column;align-items:center;padding:8px 0 16px;position:relative}
+.celebrate .emoji{
+  font-size:48px;animation:pop .5s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes pop{0%{transform:scale(0)}60%{transform:scale(1.2)}100%{transform:scale(1)}}
+.celebrate .txt{font-size:17px;font-weight:800;color:var(--primary-dark);margin-top:6px}
+.celebrate .sub{font-size:12.5px;color:var(--text-2);margin-top:2px}
+.confetti{position:absolute;width:8px;height:14px;top:0;opacity:0}
+.c1{left:20%;background:var(--primary-light);animation:fall 1.4s .1s ease-in forwards}
+.c2{left:45%;background:var(--orange);animation:fall 1.4s .25s ease-in forwards}
+.c3{left:70%;background:var(--pink);animation:fall 1.4s .4s ease-in forwards}
+.c4{left:85%;background:var(--primary);animation:fall 1.4s .55s ease-in forwards}
+@keyframes fall{0%{opacity:1;transform:translateY(-10px) rotate(0)}100%{opacity:0;transform:translateY(60px) rotate(360deg)}}
+
+textarea.input-box{resize:none;height:70px;line-height:1.5}
+
+/* ============ Toast ============ */
+.toast{
+  position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.9);
+  background:rgba(20,50,40,.82);color:#fff;padding:11px 20px;border-radius:12px;
+  font-size:13.5px;font-weight:500;z-index:200;opacity:0;pointer-events:none;
+  transition:all .22s;max-width:80%;text-align:center;
+}
+.toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+
+/* 通用工具 */
+.row-between{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}
+.txt-2{color:var(--text-2)}.txt-3{color:var(--text-3)}
+.fw7{font-weight:700}
+hr.div{border:none;border-top:1px solid var(--border);margin:14px 0}
+.tag-line{font-size:11.5px;color:var(--text-2);margin-top:4px}
+
+@media(max-width:360px){
+  .wo-time{font-size:64px}
+  .checkin-main .big{font-size:26px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ 今日 Tab ============ -->
+  <section id="tab-today" class="tab-content active">
+    <div id="today-view"></div>
+  </section>
+
+  <!-- ============ 计划 Tab ============ -->
+  <section id="tab-plan" class="tab-content">
+    <div id="plan-view"></div>
+  </section>
+
+  <!-- ============ 数据 Tab ============ -->
+  <section id="tab-data" class="tab-content">
+    <div id="data-view"></div>
+  </section>
+
+  <!-- ============ 我的 Tab ============ -->
+  <section id="tab-profile" class="tab-content">
+    <div id="profile-view"></div>
+  </section>
+
+  <!-- ============ 二级页面：运动详情 ============ -->
+  <div id="sec-exercise" class="secondary">
+    <div class="sec-head">
+      <button class="sec-back" onclick="closeSecondary('sec-exercise')">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M15.5 4l-8 8 8 8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="sec-title">运动详情</div>
+    </div>
+    <div class="sec-body" id="sec-exercise-body"></div>
+  </div>
+
+  <!-- ============ 二级页面：视频推荐 ============ -->
+  <div id="sec-videos" class="secondary">
+    <div class="sec-head">
+      <button class="sec-back" onclick="closeSecondary('sec-videos')">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M15.5 4l-8 8 8 8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="sec-title">今日视频推荐</div>
+    </div>
+    <div class="sec-body" id="sec-videos-body"></div>
+  </div>
+
+  <!-- ============ 跟练模式 ============ -->
+  <div id="workout" class="workout">
+    <div class="wo-head">
+      <button class="close" onclick="exitWorkout()">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </button>
+      <div class="t" id="wo-exercise-name">跟练模式</div>
+    </div>
+    <div class="wo-exname" id="wo-exercise-sub"></div>
+    <div class="wo-timer-wrap">
+      <div class="wo-mode-row">
+        <button class="wo-mode" id="wo-mode-countdown" onclick="setWorkoutMode('countdown')">组间休息倒计时</button>
+        <button class="wo-mode" id="wo-mode-countup" onclick="setWorkoutMode('countup')">正向计时</button>
+      </div>
+      <div class="wo-time" id="wo-time">00:00</div>
+      <div class="wo-sub" id="wo-sub">准备开始</div>
+      <div class="wo-progress">
+        <div class="bar"><div class="fill" id="wo-fill" style="width:0%"></div></div>
+        <div class="sets-txt"><span id="wo-sets-done">第 0 / 0 组</span><span id="wo-sets-rest">休息 0s</span></div>
+      </div>
+    </div>
+    <div class="wo-actions">
+      <button class="wo-btn primary btn-wide" id="wo-start-btn" onclick="toggleTimer()">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        <span id="wo-start-label">开始</span>
+      </button>
+      <button class="wo-btn" onclick="skipSet()">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M6 5l8 7-8 7M16 5v14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        跳过
+      </button>
+      <button class="wo-btn" onclick="viewExerciseGuide()">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+        动作指南
+      </button>
+      <button class="wo-btn danger btn-wide" onclick="completeExercise()">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        完成本动作
+      </button>
+    </div>
+  </div>
+
+  <!-- ============ 模态框：经期记录 ============ -->
+  <div class="modal-mask" id="mask-period">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-title">标记今日来月经</div>
+        <button class="modal-close" onclick="closeModal('mask-period')">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="field">
+        <label class="field-label">日期</label>
+        <input type="date" class="input-box" id="period-date">
+      </div>
+      <div class="field">
+        <label class="field-label">经量</label>
+        <div class="seg" id="period-flow">
+          <button data-v="少">少</button>
+          <button data-v="中">中</button>
+          <button data-v="多">多</button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">痛经程度</label>
+        <div class="seg" id="period-pain">
+          <button data-v="无">无</button>
+          <button data-v="轻度">轻度</button>
+          <button data-v="中度">中度</button>
+          <button data-v="重度">重度</button>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-line" onclick="closeModal('mask-period')">取消</button>
+        <button class="btn btn-primary" onclick="savePeriod()">保存记录</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 模态框：地屈孕酮记录 ============ -->
+  <div class="modal-mask" id="mask-dydro">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-title">记录地屈孕酮</div>
+        <button class="modal-close" onclick="closeModal('mask-dydro')">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="field">
+        <label class="field-label">日期</label>
+        <input type="date" class="input-box" id="dydro-date">
+      </div>
+      <div class="field">
+        <label class="field-label">记录类型</label>
+        <div class="seg" id="dyro-type">
+          <button data-v="start">开始服用</button>
+          <button data-v="ongoing">今日已服</button>
+          <button data-v="finished">10天已满</button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">备注（可选）</label>
+        <input type="text" class="input-box" id="dyro-note" placeholder="如：第3天/有副作用等">
+      </div>
+      <div style="background:#EBF5FB;border-radius:10px;padding:10px 14px;margin:8px 0;font-size:12px;color:#2471A3;line-height:1.6">
+        <b>服药说明：</b>地屈孕酮需在月经来潮后第15天开始服用，连续服用10天。停药后数天月经会来潮。此记录独立于经期记录，用于追踪服药周期。
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-line" onclick="closeModal('mask-dydro')">取消</button>
+        <button class="btn btn-primary" onclick="saveDydro()">保存记录</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 模态框：体重录入 ============ -->
+  <div class="modal-mask" id="mask-weight">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-title">记录体重</div>
+        <button class="modal-close" onclick="closeModal('mask-weight')">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="field">
+        <label class="field-label">日期</label>
+        <input type="date" class="input-box" id="weight-date">
+      </div>
+      <div class="field">
+        <label class="field-label">体重 <span class="req">*</span></label>
+        <input type="number" class="input-box" id="weight-value" placeholder="如 65.5" step="0.1" inputmode="decimal">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-line" onclick="closeModal('mask-weight')">取消</button>
+        <button class="btn btn-primary" onclick="saveWeight()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 模态框：血压录入 ============ -->
+  <div class="modal-mask" id="mask-bp">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-title">记录血压</div>
+        <button class="modal-close" onclick="closeModal('mask-bp')">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="field">
+        <label class="field-label">日期</label>
+        <input type="date" class="input-box" id="bp-date">
+      </div>
+      <div class="field">
+        <label class="field-label">血压值 mmHg <span class="req">*</span></label>
+        <div class="input-row">
+          <input type="number" class="input-box" id="bp-sys" placeholder="收缩压" inputmode="numeric">
+          <span class="sep">/</span>
+          <input type="number" class="input-box" id="bp-dia" placeholder="舒张压" inputmode="numeric">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-line" onclick="closeModal('mask-bp')">取消</button>
+        <button class="btn btn-primary" onclick="saveBP()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 模态框：训练反馈 ============ -->
+  <div class="modal-mask" id="mask-feedback">
+    <div class="modal">
+      <div id="fb-celebrate" class="celebrate">
+        <div class="confetti c1"></div><div class="confetti c2"></div>
+        <div class="confetti c3"></div><div class="confetti c4"></div>
+        <div class="emoji">🎉</div>
+        <div class="txt">今日训练完成！</div>
+        <div class="sub">记录一下本次训练感受</div>
+      </div>
+      <div id="fb-form">
+        <div class="modal-head"><div class="modal-title">训练反馈</div>
+          <button class="modal-close" onclick="closeModal('mask-feedback')">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div class="field">
+          <label class="field-label">完成强度</label>
+          <div class="seg" id="fb-level">
+            <button data-v="min">最低强度</button>
+            <button data-v="opt">推荐强度</button>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">训练感受</label>
+          <div class="seg" id="fb-feeling">
+            <button data-v="easy">轻松</button>
+            <button data-v="ok">刚好</button>
+            <button data-v="hard">吃力</button>
+            <button data-v="uncomfortable">不适</button>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">最高心率（可选）</label>
+          <input type="number" class="input-box" id="fb-hr" placeholder="如 130" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label class="field-label">备注</label>
+          <textarea class="input-box" id="fb-notes" placeholder="今天的状态、动作感受..."></textarea>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-line" onclick="skipFeedback()">跳过</button>
+        <button class="btn btn-primary" onclick="saveFeedback()">保存反馈</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 模态框：阶段设置 ============ -->
+  <div class="modal-mask" id="mask-phase">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-title">阶段设置</div>
+        <button class="modal-close" onclick="closeModal('mask-phase')">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="field">
+        <label class="field-label">当前阶段</label>
+        <div class="seg" id="phase-set">
+          <button data-v="1">一阶</button>
+          <button data-v="2">二阶</button>
+          <button data-v="3">三阶</button>
+          <button data-v="4">四阶</button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">计划开始日期</label>
+        <input type="date" class="input-box" id="phase-startdate">
+      </div>
+      <div class="tag-line">提示：系统默认按开始日期自动计算阶段，可在此手动覆盖。</div>
+      <div class="modal-actions">
+        <button class="btn btn-line" onclick="closeModal('mask-phase')">取消</button>
+        <button class="btn btn-primary" onclick="savePhase()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 底部 Tab 栏 ============ -->
+  <nav class="tab-bar">
+    <button class="tab-btn active" data-tab="today" onclick="switchTab('today')">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zM5 8V6h14v2H5z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+      今日
+    </button>
+    <button class="tab-btn" data-tab="plan" onclick="switchTab('plan')">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M9 4h6a1 1 0 011 1v1h2a2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h2V5a1 1 0 011-1zm0 4v1h6V8H9zm0 5v2h6v-2H9zm0 4v2h4v-2H9z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+      计划
+    </button>
+    <button class="tab-btn" data-tab="data" onclick="switchTab('data')">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      数据
+    </button>
+    <button class="tab-btn" data-tab="profile" onclick="switchTab('profile')">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-3.3 0-8 1.7-8 5v1h16v-1c0-3.3-4.7-5-8-5z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+      我的
+    </button>
+  </nav>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="data.js"></script>
+<script>
+"use strict";
+/* ============================================================
+   健康教练 PWA — 主应用逻辑
+   依赖：data.js (EXERCISES, VIDEOS, EXERCISE_PLAN)
+   ============================================================ */
+
+/* ---------- 健康档案默认值（只读档案，无后端） ---------- */
+const HEALTH_PROFILE = {
+  birthDate: "1996-11-21",
+  height: 166,            // cm
+  initialWeight: 84,      // kg
+  conditions: "高血压（一级）",
+  medications: "地屈孕酮（达芙通）"
+};
+function calcAge(){
+  const b = parseDate(HEALTH_PROFILE.birthDate);
+  const t = new Date();
+  let age = t.getFullYear() - b.getFullYear();
+  if(t.getMonth() < b.getMonth() || (t.getMonth() === b.getMonth() && t.getDate() < b.getDate())) age--;
+  return age;
+}
+
+/* ---------- localStorage 状态层 ---------- */
+const Store = {
+  get(key, def){
+    try{ const v = localStorage.getItem(key); return v? JSON.parse(v): def; }
+    catch(e){ return def; }
+  },
+  set(key, val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){} },
+  del(key){ localStorage.removeItem(key); }
+};
+const KEYS = {
+  checkins:"hc_checkins", period:"hc_period", feedback:"hc_feedback",
+  weight:"hc_weight", bp:"hc_bp", settings:"hc_settings",
+  checklist:"hc_checklist", timer:"hc_timer"
+};
+
+/* ---------- 日期工具 ---------- */
+function pad(n){ return n<10? "0"+n : ""+n; }
+function todayStr(d){ d = d||new Date(); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+function parseDate(s){ const p=s.split("-"); return new Date(+p[0], +p[1]-1, +p[2]); }
+function daysBetween(a,b){ // a,b: 'YYYY-MM-DD'
+  const da=parseDate(a), db=parseDate(b);
+  return Math.round((db-da)/86400000);
+}
+function addDaysStr(s, n){ const d=parseDate(s); d.setDate(d.getDate()+n); return todayStr(d); }
+function dowMonFirst(){ // 周一=0 ... 周日=6
+  const d = new Date().getDay(); // 0=Sun..6=Sat
+  return d===0? 6 : d-1;
+}
+function fmtChineseDate(s){
+  const d=parseDate(s);
+  const wk=["周日","周一","周二","周三","周四","周五","周六"][d.getDay()];
+  return (d.getMonth()+1)+"月"+d.getDate()+"日 "+wk;
+}
+function monthLabel(s){ const p=s.split("-"); return p[0]+"年"+(+p[1])+"月"; }
+
+/* ---------- 设置 / 阶段计算 ---------- */
+const DEFAULT_SETTINGS = { phase:1, startDate: todayStr(), travelMode:"home", notifications:true };
+function getSettings(){ return Object.assign({}, DEFAULT_SETTINGS, Store.get(KEYS.settings, {})); }
+function setSettings(s){ Store.set(KEYS.settings, s); }
+
+function weeksSinceStart(){
+  const s = getSettings().startDate;
+  if(!s) return 0;
+  const diff = daysBetween(s, todayStr());
+  return Math.max(0, Math.floor(diff/7) + 1); // 第几周（从1开始）
+}
+function calcPhase(){
+  const st = getSettings();
+  if(st.phase) return st.phase;
+  const w = weeksSinceStart();
+  if(w<=4) return 1; if(w<=8) return 2; if(w<=12) return 3; return 4;
+}
+function calcWeek(){ return weeksSinceStart(); }
+function getDayCount(){ // 第几天（累计打卡天数）
+  return Store.get(KEYS.checkins, []).length;
+}
+
+/* ---------- 经期状态 ---------- */
+function getPeriodStatus(){
+  const list = Store.get(KEYS.period, []);
+  if(!list.length) return { active:false, daysSinceLast:null, dayOfPeriod:0, lastRecord:null };
+  const sorted = list.slice().sort((a,b)=> a.date<b.date? 1:-1);
+  const last = sorted[0];
+  const daysSince = daysBetween(last.date, todayStr());
+  return {
+    active: daysSince <= 5,
+    daysSinceLast: daysSince,
+    dayOfPeriod: daysSince + 1,
+    lastRecord: last
+  };
+}
+
+/* ---------- 今日计划生成 ---------- */
+const DAY_KEYS = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"];
+function getTodayPlan(){
+  const phase = calcPhase();
+  const dow = dowMonFirst();
+  const phObj = EXERCISE_PLAN.phases[phase-1] || EXERCISE_PLAN.phases[0];
+  const dayKey = DAY_KEYS[dow];
+  const day = phObj.schedule[dayKey];
+  return { phase:phase, phaseObj:phObj, day:day, dow:dow };
+}
+
+/* ---------- 经期调整 ---------- */
+function applyPeriodAdjustment(exercises, ps){
+  if(!ps.active) return { exercises:exercises, adjusted:false, reason:"" };
+  const rec = ps.lastRecord;
+  // 重度疼痛：仅保留平衡 + 拉伸
+  if(rec && rec.pain === "重度"){
+    return {
+      exercises: exercises.map(e=> ({...e, skip:(e.category!=="balance" && e.category!=="stretch")})),
+      adjusted:true, reason:"经期重度疼痛：仅保留平衡与拉伸训练"
+    };
+  }
+  // 第1-3天：有氧降最低，跳过腹部（臀桥），其余正常
+  if(ps.dayOfPeriod <= 3){
+    return {
+      exercises: exercises.map(e=>{
+        if(e.exerciseId === "glute_bridge") return {...e, skip:true, reason:"经期跳过腹部训练"};
+        if(e.category === "cardio") return {...e, forceMin:true};
+        return e;
+      }),
+      adjusted:true, reason:"经期第"+ps.dayOfPeriod+"天：有氧降至最低强度，跳过腹部训练"
+    };
+  }
+  // 第4-5天：有氧心率上限-10，抗阻正常
+  return {
+    exercises: exercises.map(e=> e.category==="cardio"? {...e, hrCap:true}: e),
+    adjusted:true, reason:"经期第"+ps.dayOfPeriod+"天：有氧心率上限降低10bpm"
+  };
+}
+
+/* ---------- 清单状态 ---------- */
+function getChecklist(date){
+  const all = Store.get(KEYS.checklist, {});
+  return all[date] || {};
+}
+function setChecklistItem(date, itemId, checked, level){
+  const all = Store.get(KEYS.checklist, {});
+  if(!all[date]) all[date] = {};
+  if(checked){
+    all[date][itemId] = { checked:true, level: level||"min" };
+  } else {
+    delete all[date][itemId];
+  }
+  Store.set(KEYS.checklist, all);
+}
+// 为今日练习条目生成稳定 ID（category-index），所有读取处共享
+function getTodayExercisesWithId(){
+  const plan = getTodayPlan();
+  const adj = applyPeriodAdjustment(plan.day.exercises, getPeriodStatus());
+  adj.exercises.forEach((e,i)=>{ e._id = e.category+"-"+i; });
+  return { plan, adj };
+}
+function getCompletionPercent(date){
+  const { adj } = getTodayExercisesWithId();
+  const total = adj.exercises.filter(e=>!e.skip).length;
+  if(!total) return { pct:0, done:0, total:0 };
+  const cl = getChecklist(date);
+  const modVids = getModuleVids(date);
+  const fullRep = getFullReplaceVid(date);
+  // 构建模块到项目的映射
+  const groupCatMap = {};
+  adj.exercises.forEach(e=>{ if(e.category) groupCatMap[e._id] = e.category; });
+  let done = 0;
+  adj.exercises.forEach(e=>{
+    if(e.skip) return;
+    // 如果选了完整替代或模块视频，该模块的项目视为完成
+    const cat = e.category;
+    if(fullRep || (cat && modVids[cat])){
+      done++;
+      return;
+    }
+    if(cl[e._id] && cl[e._id].checked) done++;
+  });
+  return { pct: Math.round(done/total*100), done, total };
+}
+
+/* ---------- 自动打卡 ---------- */
+function autoCheckin(){
+  const list = Store.get(KEYS.checkins, []);
+  const t = todayStr();
+  if(!list.find(c=>c.date===t)){
+    list.push({ date:t, phase:calcPhase(), week:calcWeek() });
+    Store.set(KEYS.checkins, list);
+  }
+}
+
+/* ============================================================
+   渲染：今日
+   ============================================================ */
+function renderToday(){
+  autoCheckin();
+  const settings = getSettings();
+  const phase = calcPhase();
+  const week = calcWeek();
+  const dayCount = getDayCount();
+  const ps = getPeriodStatus();
+  const { plan, adj } = getTodayExercisesWithId();
+  const comp = getCompletionPercent(todayStr());
+  const today = new Date();
+  const wkStr = ["周日","周一","周二","周三","周四","周五","周六"][today.getDay()];
+
+  // 经期状态颜色
+  let psColor = "#8AE2C9", psBadge="周期正常", psBadgeBg="#E0F5EF", psBadgeColor="#155A47";
+  if(ps.daysSinceLast !== null){
+    if(ps.daysSinceLast > 60){ psColor="#E63946"; psBadge="周期偏长，建议关注"; psBadgeBg="#FFE0E0"; psBadgeColor="#C0271F"; }
+    else if(ps.daysSinceLast >= 35){ psColor="#F4A261"; psBadge="周期略长"; psBadgeBg="#FFF4E0"; psBadgeColor="#B5740A"; }
+    else { psBadge="周期正常"; psBadgeBg="#E0F5EF"; psBadgeColor="#155A47"; }
+  }
+
+  // 清单分组
+  const catOrder = ["cardio","resistance","balance","stretch"];
+  const catLabel = { cardio:"有氧训练", resistance:"抗阻训练", balance:"平衡训练", stretch:"拉伸放松" };
+  const catColor = { cardio:"#2A9D7E", resistance:"#8AE2C9", balance:"#B7E4C7", stretch:"#5BC9A8" };
+  const groups = catOrder.map(c=>({ cat:c, label:catLabel[c], color:catColor[c], items:[] }));
+  adj.exercises.forEach((e)=>{
+    const g = groups.find(g=>g.cat===e.category);
+    if(g) g.items.push(e);
+  });
+
+  const ringPct = comp.pct;
+  const ringCirc = 2*Math.PI*30;
+  const ringOff = ringCirc*(1 - ringPct/100);
+
+  let html = `
+  <div class="page-head">
+    <div class="page-title">今日训练</div>
+    <div class="page-sub">${fmtChineseDate(todayStr())} · ${getPhaseLabel(phase)}</div>
+  </div>
+
+  <div class="checkin-card">
+    <div class="checkin-date">${fmtChineseDate(todayStr())} 已自动打卡</div>
+    <div class="checkin-main">
+      <div>
+        <div class="big">第 ${week} 周</div>
+      </div>
+    </div>
+    <div class="checkin-meta">
+      <span class="chip">阶段 ${phase}</span>
+      <span class="chip">${wkStr}</span>
+      <span class="chip">累计 ${dayCount} 天</span>
+      ${settings.travelMode==="travel"?'<span class="chip">出差模式</span>':''}
+    </div>
+    <div class="checkin-streak">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M13.5 0.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67z" fill="currentColor"/></svg>
+      坚持训练，健康每一天
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>今日完成度</div>
+    <div class="completion-ring">
+      <div class="ring-wrap">
+        <svg width="74" height="74" viewBox="0 0 74 74">
+          <circle cx="37" cy="37" r="30" fill="none" stroke="#EAF1ED" stroke-width="7"/>
+          <circle cx="37" cy="37" r="30" fill="none" stroke="#8AE2C9" stroke-width="7"
+            stroke-linecap="round" stroke-dasharray="${ringCirc}" stroke-dashoffset="${ringOff}"/>
+        </svg>
+        <div class="ring-text">${ringPct}%</div>
+      </div>
+      <div class="completion-info">
+        <div class="lbl">已完成项目</div>
+        <div class="val"><b>${comp.done}</b> / ${comp.total} 项</div>
+        <div class="lbl mt8">${comp.pct>=100?'全部完成，太棒了！':(comp.pct>0?'继续加油，马上完成':'今天还没开始训练哦')}</div>
+      </div>
+    </div>
+  </div>
+  `;
+
+  // 经期调整横幅
+  if(adj.adjusted){
+    html += `
+    <div class="period-banner">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C7.6 2 4 5.6 4 10c0 2.2 1 4.2 2.5 5.6V20c0 .6.4 1 1 1h2v1c0 .6.4 1 1 1h3c.6 0 1-.4 1-1v-1h2c.6 0 1-.4 1-1v-4.4C20 14.2 20 12.2 20 10c0-4.4-3.6-8-8-8zm-2.5 14c-.8 0-1.5-.7-1.5-1.5S9.2 13 10 13s1.5.7 1.5 1.5S10.8 16 9.5 16zm5 0c-.8 0-1.5-.7-1.5-1.5S13.7 13 14.5 13s1.5.7 1.5 1.5-.7 1.5-1.5 1.5z"/></svg>
+      ${adj.reason}
+    </div>`;
+  }
+
+  // 今日训练清单
+  html += `<div class="card">
+    <div class="card-title">
+      <span class="dot"></span>今日训练清单
+      <span class="more" onclick="openVideos()">${plan.day.videosTypeA.length+plan.day.videosTypeB.length} 个视频 ›</span>
+    </div>`;
+
+  groups.forEach(g=>{
+    if(!g.items.length) return;
+    const validItems = g.items.filter(i=>!i.skip);
+    if(!validItems.length && g.items.some(i=>i.skip)) {
+      // 整组被跳过则显示跳过提示
+      html += `<div class="checklist-group">
+        <div class="group-label"><span class="gtag" style="background:${g.color}"></span>${g.label}（经期已调整）</div>`;
+      g.items.forEach(it=>{
+        html += `<div class="checklist-item skipped">
+          <div class="cbox"></div>
+          <div class="ci-body">
+            <div class="ci-name">${it.name} <span class="skip-tag">已跳过</span></div>
+          </div>
+        </div>`;
+      });
+      html += `</div>`;
+      return;
+    }
+    html += `<div class="checklist-group">
+      <div class="group-label">
+        <span class="gtag" style="background:${g.color}"></span>${g.label}
+        ${getModuleVideoIds(plan, g.cat).length > 0 ? `<div class="module-toggle">
+          <button onclick="event.stopPropagation();openModuleExercise('${g.cat}', ${JSON.stringify(g.items.map(i=>({name:i.name,exerciseId:i.exerciseId,category:i.category,skip:i.skip}))).replace(/"/g,'&quot;')})">按计划</button>
+          <button class="${expandedVidOptions.has(g.cat)?'on':''}" onclick="event.stopPropagation();toggleVidOptions('${g.cat}')">跟练视频</button>
+        </div>`:''}
+      </div>`;
+    const moduleGrayed = isModuleGrayed(todayStr(), g.cat);
+    g.items.forEach(it=>{
+      const cl = getChecklist(todayStr())[it._id];
+      const checked = !!(cl && cl.checked);
+      const level = cl? cl.level : "min";
+      const doneCls = checked? "done":"";
+      const skipCls = it.skip? "skipped":"";
+      const grayCls = moduleGrayed? "grayed":"";
+      const minDesc = it.forceMin? (it.minDesc+"（经期）") : it.minDesc;
+      let descHtml = `最少 <b>${minDesc}</b> · 推荐 <b>${it.optDesc}</b>`;
+      if(it.hrCap) descHtml += ` · <span class="skip-tag" style="color:#F4A261">心率上限-10</span>`;
+      if(it.skip) descHtml = `<span class="skip-tag">经期已跳过</span>`;
+      const arrow = `<div class="ci-arrow" onclick="event.stopPropagation();openExerciseInfo('${it.category}','${it.name}','${it.exerciseId||""}')">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`;
+
+      html += `<div class="checklist-item ${doneCls} ${skipCls} ${grayCls}" onclick="toggleItem('${it._id}','${it.exerciseId||""}')">
+        <div class="cbox">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="ci-body">
+          <div class="ci-name">${it.name}</div>
+          <div class="ci-desc">${descHtml}</div>
+        </div>
+        ${arrow}
+      </div>`;
+    });
+    // 可折叠的跟练视频区域（仅有视频的模块）
+    const modVids = getModuleVideoIds(plan, g.cat);
+    if(modVids.length > 0){
+      const expanded = expandedVidOptions.has(g.cat);
+      const selectedVid = getModuleVids(todayStr())[g.cat];
+      html += `<div class="vid-options ${expanded?'expanded':''}">
+        <div class="vid-options-inner">
+          <div class="vo-label">选择跟练视频替代此模块（点击选择/取消）</div>`;
+      modVids.forEach(id=>{
+        const v = VIDEOS[id];
+        if(!v) return;
+        const sel = selectedVid === id ? "selected" : "";
+        html += `<div class="mod-vid-card ${sel}" onclick="event.stopPropagation();selectModuleVideo('${g.cat}','${id}')">
+          <div class="mod-vid-check"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="mod-vid-thumb">${v.dur||""}</div>
+          <div class="mod-vid-info">
+            <div class="mod-vid-title">${v.title}</div>
+            <div class="mod-vid-meta">${v.ch||""} · ${v.views||""}</div>
+          </div>
+        </div>`;
+      });
+      html += `</div></div>`;
+    }
+    html += `</div>`;
+  });
+  html += `</div>`;
+
+  // 完整替代今日训练
+  const vidsA = plan.day.videosTypeA || [];
+  const vidsB = plan.day.videosTypeB || [];
+  if(vidsA.length > 0){
+    const fullReplaceVid = getFullReplaceVid(todayStr());
+    html += `<div class="full-replace ${fullReplaceVid?'active':''}">
+      <div class="fr-title">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M10 8l6 4-6 4V8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><rect x="2" y="3" width="20" height="18" rx="3" stroke="currentColor" stroke-width="1.8"/></svg>
+        完整替代今日训练
+      </div>
+      <div class="fr-desc">选择一个视频跟练完成全部训练，上方清单将全部置灰。${fullReplaceVid?'<br><b style="color:var(--primary)">已选择跟练视频替代今日全部训练</b>':'点击视频选择/取消'}</div>
+      <div class="fr-vid-list">`;
+    vidsA.slice(0,3).forEach(id=>{
+      const v = VIDEOS[id];
+      if(!v) return;
+      const sel = fullReplaceVid === id ? "selected" : "";
+      html += `<div class="fr-vid-card ${sel}" onclick="selectFullReplaceVideo('${id}')">
+        <div class="mod-vid-check"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="fr-vid-thumb">${v.dur||""}</div>
+        <div class="fr-vid-info">
+          <div class="fr-vid-title">${v.title}</div>
+          <div class="fr-vid-meta">${v.ch||""} · ${v.views||""}</div>
+        </div>
+      </div>`;
+    });
+    if(vidsA.length > 3){
+      html += `<div style="text-align:center;padding:6px 0 2px"><span class="more" style="font-size:12px" onclick="openVideos()">还有 ${vidsA.length-3} 个视频 ›</span></div>`;
+    }
+    html += `</div></div>`;
+  }
+
+  // 开始训练按钮
+  const firstEx = adj.exercises.find(e=>e.exerciseId && !e.skip);
+  html += `<div style="margin:0 14px 12px">
+    <button class="btn btn-primary" onclick="${firstEx? `openExercise('${firstEx.exerciseId}')`:'openVideos()'}">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      开始今日训练
+    </button>
+  </div>`;
+
+  // 经期状态卡
+  if(ps.daysSinceLast !== null){
+    html += `<div class="card">
+      <div class="card-title"><span class="dot"></span>经期状态</div>
+      <div class="period-status">
+        <div class="ps-circle" style="background:${psColor}">
+          <div class="num">${ps.daysSinceLast}</div>
+          <div class="unit">天</div>
+        </div>
+        <div class="ps-info">
+          <div class="t">距上次月经 ${ps.daysSinceLast} 天</div>
+          <div class="d">${ps.active? '当前处于经期（第'+ps.dayOfPeriod+'天）':'周期追踪中'}</div>
+          <div class="badge" style="background:${psBadgeBg};color:${psBadgeColor}">${psBadge}</div>
+        </div>
+      </div>
+    </div>`;
+  } else {
+    html += `<div class="card">
+      <div class="card-title"><span class="dot"></span>经期状态</div>
+      <div class="empty-tip">尚未记录经期，点击下方按钮开始记录</div>
+    </div>`;
+  }
+
+  // 地屈孕酮用药状态卡
+  const dyroList = Store.get("hc_dydro", []);
+  if(dyroList.length > 0){
+    const latestDyro = dyroList[dyroList.length - 1];
+    let dyroStatus = "";
+    let dyroColor = "#6B7C75";
+    if(latestDyro.type === "start"){
+      // 计算服药天数
+      const days = Math.floor((new Date(todayStr()) - new Date(latestDyro.date)) / 86400000) + 1;
+      dyroStatus = `正在服药 · 第${days}天（共10天）`;
+      dyroColor = days <= 10 ? "#2A9D7E" : "#F4A261";
+    } else if(latestDyro.type === "ongoing"){
+      const days = Math.floor((new Date(todayStr()) - new Date(latestDyro.date)) / 86400000) + 1;
+      dyroStatus = `今日已服药`;
+      dyroColor = "#2A9D7E";
+    } else if(latestDyro.type === "finished"){
+      dyroStatus = "10天疗程已满 · 等待月经来潮";
+      dyroColor = "#F4A261";
+    }
+    html += `<div class="card">
+      <div class="card-title"><span class="dot" style="background:${dyroColor}"></span>地屈孕酮</div>
+      <div style="font-size:13px;color:var(--text-2);line-height:1.8">
+        <div>最近记录：${latestDyro.date}</div>
+        <div style="font-weight:600;color:${dyroColor}">${dyroStatus}</div>
+        ${latestDyro.note ? `<div style="font-size:12px;color:var(--text-3)">备注：${latestDyro.note}</div>` : ""}
+      </div>
+    </div>`;
+  }
+
+  // 标记月经按钮 + 地屈孕酮按钮
+  html += `<div style="margin:0 14px 12px;display:flex;gap:10px">
+    <button class="btn ${ps.active?'btn-light':'btn-ghost'}" style="flex:1" onclick="openPeriodModal()">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 2C7.6 2 4 5.6 4 10c0 2.2 1 4.2 2.5 5.6V20c0 .6.4 1 1 1h2v1c0 .6.4 1 1 1h3c.6 0 1-.4 1-1v-1h2c.6 0 1-.4 1-1v-4.4C20 14.2 20 12.2 20 10c0-4.4-3.6-8-8-8z"/></svg>
+      标记月经
+    </button>
+    <button class="btn btn-ghost" style="flex:1" onclick="openDydroModal()">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19 3h-2V3c0-.6-.4-1-1-1H8c-.6 0-1 .4-1 1v0H5C3.9 3 3 3.9 3 5v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 15c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6zm0-10c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4z"/></svg>
+      记录地屈孕酮
+    </button>
+  </div>`;
+
+  document.getElementById("today-view").innerHTML = html;
+}
+
+function getPhaseLabel(p){
+  const ph = EXERCISE_PLAN.phases[p-1];
+  return ph? ph.label.split("：")[0] : ("阶段"+p);
+}
+
+/* 清单项交互 */
+function toggleItem(itemId, exId){
+  const cl = getChecklist(todayStr());
+  const cur = cl[itemId];
+  const checked = !!(cur && cur.checked);
+  const level = cur? cur.level : "min";
+  setChecklistItem(todayStr(), itemId, !checked, level);
+  renderToday();
+  // 全部完成 -> 弹反馈
+  if(!checked){
+    const comp = getCompletionPercent(todayStr());
+    if(comp.pct >= 100){
+      setTimeout(()=> openFeedback(true), 350);
+    }
+  }
+}
+function setLevel(itemId, level){
+  const cl = getChecklist(todayStr());
+  const cur = cl[itemId];
+  const checked = cur? cur.checked : false;
+  if(checked){
+    setChecklistItem(todayStr(), itemId, true, level);
+  } else {
+    // 未勾选时仅记录偏好
+    const all = Store.get(KEYS.checklist, {});
+    if(!all[todayStr()]) all[todayStr()] = {};
+    all[todayStr()][itemId] = { checked:false, level:level };
+    Store.set(KEYS.checklist, all);
+  }
+  renderToday();
+}
+
+/* ---------- 模块视频选择状态 ---------- */
+let expandedVidOptions = new Set(); // 当前展开的视频选项模块
+
+function getModuleVids(date){
+  const all = Store.get(KEYS.checklist, {});
+  const day = all[date] || {};
+  return day._vids || {};
+}
+function toggleModuleVid(date, category, videoId){
+  const all = Store.get(KEYS.checklist, {});
+  if(!all[date]) all[date] = {};
+  if(!all[date]._vids) all[date]._vids = {};
+  if(all[date]._vids[category] === videoId){
+    delete all[date]._vids[category];
+  } else {
+    all[date]._vids[category] = videoId;
+  }
+  Store.set(KEYS.checklist, all);
+}
+function getFullReplaceVid(date){
+  const all = Store.get(KEYS.checklist, {});
+  const day = all[date] || {};
+  return day._fullreplace || null;
+}
+function toggleFullReplaceVid(date, videoId){
+  const all = Store.get(KEYS.checklist, {});
+  if(!all[date]) all[date] = {};
+  if(all[date]._fullreplace === videoId){
+    delete all[date]._fullreplace;
+  } else {
+    all[date]._fullreplace = videoId;
+  }
+  Store.set(KEYS.checklist, all);
+}
+function isModuleGrayed(date, category){
+  if(getFullReplaceVid(date)) return true;
+  const vids = getModuleVids(date);
+  return !!vids[category];
+}
+// 模块视频映射：cardio -> videosTypeA, resistance -> videosTypeB
+function getModuleVideoIds(plan, category){
+  if(category === "cardio") return plan.day.videosTypeA || [];
+  if(category === "resistance") return plan.day.videosTypeB || [];
+  return [];
+}
+
+/* ---------- 模块交互函数 ---------- */
+// 点击"按计划" -> 进入第一个运动的详情页
+function openModuleExercise(category, items){
+  const first = items.find(i=>!i.skip && i.exerciseId);
+  const firstAny = items.find(i=>!i.skip);
+  if(first){
+    openExercise(first.exerciseId);
+  } else if(firstAny){
+    openExerciseInfo(firstAny.category, firstAny.name, firstAny.exerciseId || "");
+  } else {
+    toast("该模块暂无可训练项目");
+  }
+}
+// 点击"跟练视频" -> 展开/收起视频选项
+function toggleVidOptions(category){
+  if(expandedVidOptions.has(category)){
+    expandedVidOptions.delete(category);
+  } else {
+    expandedVidOptions.add(category);
+  }
+  renderToday();
+}
+// 选中/取消模块跟练视频
+function selectModuleVideo(category, videoId){
+  toggleModuleVid(todayStr(), category, videoId);
+  renderToday();
+}
+// 选中/取消完整替代视频
+function selectFullReplaceVideo(videoId){
+  toggleFullReplaceVid(todayStr(), videoId);
+  renderToday();
+}
+
+/* ============================================================
+   渲染：计划
+   ============================================================ */
+let planViewPhase = 0; // 0 = 跟随当前阶段
+function selectPlanPhase(n){
+  const cur = calcPhase();
+  if(n === cur){ planViewPhase = 0; }
+  else { planViewPhase = n; }
+  renderPlan();
+}
+function renderPlan(){
+  const phase = calcPhase();
+  const viewPhase = planViewPhase || phase;
+  const phObj = EXERCISE_PLAN.phases[viewPhase-1];
+  const dow = dowMonFirst();
+  const today = new Date();
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - dow);
+
+  const isViewingOther = (viewPhase !== phase);
+  const phaseStatus = viewPhase < phase ? '已完成' : viewPhase > phase ? '未开始' : '进行中';
+
+  let html = `<div class="page-head">
+    <div class="page-title">运动计划</div>
+    <div class="page-sub">${phObj.label}${isViewingOther?` · 查看${getPhaseLabel(viewPhase)}`:''}</div>
+  </div>
+
+  <div class="phase-overview" style="margin:14px">
+    <div class="lbl">${phObj.label}</div>
+    <div class="name">${phObj.label.split("：")[1]||""}</div>
+    <div class="wk">${phObj.weekRange}${viewPhase===phase?` · 当前第 ${calcWeek()} 周`:` · ${phaseStatus}`}</div>
+    <div class="desc">${phObj.description}</div>
+  </div>
+
+  ${isViewingOther?`<div style="margin:0 14px 8px"><button class="btn btn-line" style="width:100%" onclick="selectPlanPhase(${phase})">← 返回当前阶段（${getPhaseLabel(phase)}）</button></div>`:''}
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>${isViewingOther?'阶段典型周日程':'本周日程'}${isViewingOther?` · ${getPhaseLabel(viewPhase)}`:''}</div>`;
+  const dowNames = ["周一","周二","周三","周四","周五","周六","周日"];
+  const dayTypeLabel = { cardio_resistance:"有氧+抗阻", cardio_focus:"有氧主导", recovery:"恢复", rest:"休息" };
+  DAY_KEYS.forEach((dk,i)=>{
+    const day = phObj.schedule[dk];
+    const d = new Date(monday);
+    d.setDate(monday.getDate()+i);
+    const ds = todayStr(d);
+    const isToday = (ds === todayStr() && !isViewingOther);
+    const exNames = day.exercises.filter(e=>true).map(e=>e.name).join(" · ");
+    const brief = day.exercises.slice(0,3).map(e=>e.name).join("、") + (day.exercises.length>3?" 等":"");
+    html += `<div class="day-card ${isToday?'today':''}">
+      <div class="dow"><div class="nm">${dowNames[i]}</div><div class="dt">${isViewingOther?'—':d.getDate()}</div></div>
+      <div class="day-body">
+        <div class="day-type ${day.type==='rest'?'rest':''}">${dayTypeLabel[day.type]||day.type}</div>
+        <div class="day-content">${day.type==='rest'?'休息日，可做轻度平衡拉伸':brief}</div>
+      </div>
+      <div class="day-dot ${day.type}"></div>
+    </div>`;
+  });
+  html += `</div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>阶段进度</div>
+    <div class="timeline">`;
+  EXERCISE_PLAN.phases.forEach((p,idx)=>{
+    const cur = (idx+1===phase);
+    const viewing = (idx+1===viewPhase);
+    const done = (idx+1 < phase);
+    const wkLabel = p.weekRange;
+    html += `<div class="tl-phase ${cur?'current':''} ${done?'done':''} ${viewing?'viewing':''}" onclick="selectPlanPhase(${idx+1})">
+      <div class="dot"></div>
+      <div class="nm">阶段${p.phase}</div>
+      <div class="wk">${wkLabel}</div>
+    </div>`;
+  });
+  html += `</div>
+  <div class="tag-line" style="margin-top:14px;text-align:center">当前位于第 ${phase} 阶段 · 第 ${calcWeek()} 周${isViewingOther?` · 正在查看第 ${viewPhase} 阶段`:''}</div>
+  </div>`;
+
+  document.getElementById("plan-view").innerHTML = html;
+}
+
+/* ============================================================
+   渲染：数据
+   ============================================================ */
+let calMonthOffset = 0;
+function renderData(){
+  const weights = Store.get(KEYS.weight, []);
+  const bps = Store.get(KEYS.bp, []);
+  const feedbacks = Store.get(KEYS.feedback, []);
+  const periods = Store.get(KEYS.period, []);
+
+  let html = `<div class="page-head">
+    <div class="page-title">健康数据</div>
+    <div class="page-sub">体重 · 血压 · 完成度 · 经期 · 历史</div>
+  </div>`;
+
+  // 体重卡
+  const lastW = weights.length? weights[weights.length-1] : null;
+  const firstW = weights.length? weights[0] : null;
+  const curW = lastW? lastW.weight : HEALTH_PROFILE.height? 65 : 65;
+  const startW = firstW? firstW.weight : curW;
+  const change = +(curW - startW).toFixed(1);
+  let wChangeCls = "flat", wChangeTxt="暂无变化";
+  if(weights.length>=2){
+    if(change < 0){ wChangeCls="down"; wChangeTxt = change+" kg"; }
+    else if(change > 0){ wChangeCls="up"; wChangeTxt = "+"+change+" kg"; }
+  }
+  // 迷你图表
+  const recentW = weights.slice(-7);
+  let chartHtml = "";
+  if(recentW.length){
+    const vals = recentW.map(w=>w.weight);
+    const min = Math.min(...vals), max = Math.max(...vals);
+    const range = (max-min)||1;
+    chartHtml = recentW.map((w,i)=>{
+      const h = 12 + ((w.weight-min)/range)*34;
+      const isLast = (i===recentW.length-1);
+      return `<div class="mini-bar ${isLast?'last':''}" style="height:${h}px">
+        ${isLast? `<div class="tip">${w.weight}</div>`:""}
+      </div>`;
+    }).join("");
+  } else {
+    chartHtml = `<div class="empty-tip" style="grid-column:span 7">暂无体重记录</div>`;
+  }
+  html += `<div class="card">
+    <div class="card-title"><span class="dot"></span>体重追踪
+      <span class="more" onclick="openWeightModal()">记录 ›</span>
+    </div>
+    <div class="stat-row">
+      <div><div class="stat-big">${curW}<span class="u">kg</span></div></div>
+      ${weights.length>=2?`<div class="stat-change ${wChangeCls}">${wChangeTxt}</div>`:''}
+    </div>
+    <div class="mini-chart">${chartHtml}</div>
+    ${weights.length?`<div class="tag-line">起始 ${startW} kg · 当前 ${curW} kg</div>`:`<div class="tag-line">点击右上角开始记录体重</div>`}
+  </div>`;
+
+  // 血压卡
+  let bpHtml = `<div class="empty-tip">暂无血压记录</div>`;
+  if(bps.length){
+    const lastBp = bps[bps.length-1];
+    const assessment = assessBP(lastBp.systolic, lastBp.diastolic);
+    bpHtml = `
+    <div class="bp-reading">${lastBp.systolic}<span class="slash">/</span>${lastBp.diastolic}<span class="u" style="font-size:12px;color:var(--text-2);font-weight:500"> mmHg</span></div>
+    <div class="bp-badge ${assessment.cls}">${assessment.label}</div>
+    <div class="tag-line">${lastBp.date} 记录</div>`;
+  }
+  html += `<div class="card">
+    <div class="card-title"><span class="dot"></span>血压
+      <span class="more" onclick="openBpModal()">记录 ›</span>
+    </div>
+    ${bpHtml}
+  </div>`;
+
+  // 本周完成度
+  const today = new Date();
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - dowMonFirst());
+  let wgHtml = "";
+  const dowNames = ["一","二","三","四","五","六","日"];
+  for(let i=0;i<7;i++){
+    const d = new Date(monday); d.setDate(monday.getDate()+i);
+    const ds = todayStr(d);
+    const isToday = (ds === todayStr());
+    const isFuture = d > today;
+    const comp = getCompletionPercent(ds);
+    const done = comp.pct>=100 && !isFuture;
+    wgHtml += `<div class="wg-cell ${done?'done':'miss'} ${isToday?'today':''}">
+      <div class="d">${dowNames[i]}</div>
+      <div>${done?'✓':(isFuture?'-':'·')}</div>
+    </div>`;
+  }
+  html += `<div class="card">
+    <div class="card-title"><span class="dot"></span>本周完成度</div>
+    <div class="week-grid">${wgHtml}</div>
+    <div class="tag-line" style="margin-top:10px">绿色=已全部完成</div>
+  </div>`;
+
+  // 经期日历
+  html += renderPeriodCalendar(periods);
+
+  // 训练历史
+  html += `<div class="card">
+    <div class="card-title"><span class="dot"></span>训练历史</div>`;
+  if(!feedbacks.length){
+    html += `<div class="empty-tip">暂无训练记录</div>`;
+  } else {
+    const sorted = feedbacks.slice().sort((a,b)=> a.date<b.date?1:-1).slice(0,8);
+    const feelLabel = { easy:"轻松", ok:"刚好", hard:"吃力", uncomfortable:"不适" };
+    const lvlLabel = { min:"最低", opt:"推荐" };
+    sorted.forEach(f=>{
+      const d = parseDate(f.date);
+      const feelCls = f.feeling||"ok";
+      html += `<div class="history-item">
+        <div class="hi-date"><div class="dd">${d.getDate()}</div><div class="mm">${d.getMonth()+1}月</div></div>
+        <div class="hi-body">
+          <div class="hi-comp">${lvlLabel[f.level]||"最低"}强度 · ${f.duration||0} 分钟 · ${Math.round((f.completion||0)*100)}%</div>
+          <div class="hi-meta">${fmtChineseDate(f.date)}${f.hr?' · 心率 '+f.hr:''}${f.notes?' · '+f.notes:''}</div>
+        </div>
+        <div class="hi-feel ${feelCls}">${feelLabel[f.feeling]||"刚好"}</div>
+      </div>`;
+    });
+  }
+  html += `</div>`;
+
+  document.getElementById("data-view").innerHTML = html;
+}
+
+function assessBP(sys, dia){
+  if(sys>=140 || dia>=90) return { cls:"high2", label:"高血压（二级）" };
+  if(sys>=130 || dia>=80) return { cls:"high1", label:"高血压（一级）" };
+  if(sys>=120) return { cls:"elevated", label:"血压升高" };
+  return { cls:"normal", label:"正常" };
+}
+
+function renderPeriodCalendar(periods){
+  const base = new Date();
+  base.setDate(1);
+  base.setMonth(base.getMonth()+calMonthOffset);
+  const year = base.getFullYear();
+  const month = base.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month+1, 0);
+  const startDow = (firstDay.getDay()+6)%7; // 周一=0
+  const daysInMonth = lastDay.getDate();
+  const today = todayStr();
+
+  // 经期日期集合
+  const periodSet = new Set(periods.map(p=>p.date));
+
+  // 地屈孕酮服药日期集合
+  const dyroList = Store.get("hc_dydro", []);
+  const dyroSet = new Set();
+  dyroList.forEach(d=>{
+    if(d.type === "start"){
+      // 从开始日起算10天服药期
+      const sd = new Date(d.date);
+      for(let i=0;i<10;i++){
+        const dt = new Date(sd);
+        dt.setDate(dt.getDate()+i);
+        dyroSet.add(dt.getFullYear()+"-"+pad(dt.getMonth()+1)+"-"+pad(dt.getDate()));
+      }
+    } else if(d.type === "ongoing"){
+      dyroSet.add(d.date);
+    } else if(d.type === "finished"){
+      dyroSet.add(d.date);
+    }
+  });
+
+  const dowNames = ["一","二","三","四","五","六","日"];
+  let cells = "";
+  dowNames.forEach(d=> cells += `<div class="cal-dow">${d}</div>`);
+  for(let i=0;i<startDow;i++) cells += `<div class="cal-cell empty"></div>`;
+  for(let d=1; d<=daysInMonth; d++){
+    const ds = year+"-"+pad(month+1)+"-"+pad(d);
+    const isPeriod = periodSet.has(ds);
+    const isDyro = dyroSet.has(ds);
+    const isToday = (ds === today);
+    cells += `<div class="cal-cell ${isPeriod?'period':''} ${isDyro?'dyro':''} ${isToday?'today':''}">${d}</div>`;
+  }
+  const label = year+"年"+(month+1)+"月";
+  return `<div class="card">
+    <div class="card-title"><span class="dot"></span>经期日历</div>
+    <div class="cal-month-nav">
+      <button class="cal-nav-btn" onclick="calPrev()">‹ 上月</button>
+      <div class="m">${label}</div>
+      <button class="cal-nav-btn" onclick="calNext()">下月 ›</button>
+    </div>
+    <div class="cal-grid">${cells}</div>
+    <div class="tag-line">粉色=经期 · 蓝色=地屈孕酮服药 · 边框=今天</div>
+  </div>`;
+}
+function calPrev(){ calMonthOffset--; renderData(); }
+function calNext(){ calMonthOffset++; renderData(); }
+
+/* ============================================================
+   渲染：我的
+   ============================================================ */
+function renderProfile(){
+  const s = getSettings();
+  const phase = calcPhase();
+  const phObj = EXERCISE_PLAN.phases[phase-1];
+  const weights = Store.get(KEYS.weight, []);
+  const curW = weights.length? weights[weights.length-1].weight : HEALTH_PROFILE.initialWeight;
+  const bmi = (curW / Math.pow(HEALTH_PROFILE.height/100, 2)).toFixed(1);
+
+  let html = `<div class="page-head">
+    <div class="page-title">我的</div>
+    <div class="page-sub">个人设置与健康档案</div>
+  </div>
+
+  <div class="profile-section">
+    <div class="profile-group">
+      <div class="pg-row" onclick="openPhaseModal()">
+        <div class="pg-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2L3 7v6c0 5 3.8 9.7 9 11 5.2-1.3 9-6 9-11V7l-9-5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
+        <div class="pg-body"><div class="pg-title">当前阶段</div><div class="pg-desc">阶段 ${phase} · ${phObj.weekRange}</div></div>
+        <div class="pg-val">${getPhaseLabel(phase)}</div>
+        <div class="pg-arrow"><svg viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      </div>
+      <div class="pg-row" onclick="toggleTravelMode()">
+        <div class="pg-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M3 11l18-5v12L3 14v-3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M7 14v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+        <div class="pg-body"><div class="pg-title">出行模式</div><div class="pg-desc">${s.travelMode==='travel'?'出差模式：推荐坐姿/无器械训练，弹力带动作改为自重':'居家模式：完整器械训练，弹力带+坐姿训练'}<br><span style="font-size:11px;color:var(--text-3)">切换后今日训练清单自动调整</span></div></div>
+        <label class="switch" onclick="event.stopPropagation();toggleTravelMode()"><input type="checkbox" ${s.travelMode==='travel'?'checked':''}><span class="slider"></span></label>
+      </div>
+    </div>
+  </div>
+
+  <div class="profile-section">
+    <div class="profile-group">
+      <div class="pg-row" style="cursor:default">
+        <div class="pg-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-3.3 0-8 1.7-8 5v1h16v-1c0-3.3-4.7-5-8-5z" stroke="currentColor" stroke-width="1.8"/></svg></div>
+        <div class="pg-body"><div class="pg-title">健康档案</div><div class="pg-desc">只读 · 不可编辑</div></div>
+      </div>
+      <div class="health-stat"><div class="k">年龄</div><div class="v">${calcAge()} 岁</div></div>
+      <div class="health-stat"><div class="k">身高</div><div class="v">${HEALTH_PROFILE.height} cm</div></div>
+      <div class="health-stat"><div class="k">初始体重</div><div class="v">${HEALTH_PROFILE.initialWeight} kg</div></div>
+      <div class="health-stat"><div class="k">当前体重</div><div class="v">${curW} kg</div></div>
+      <div class="health-stat"><div class="k">BMI</div><div class="v">${bmi} ${bmi<18.5?'（偏瘦）':bmi<24?'（正常）':bmi<28?'（超重）':'（肥胖）'}</div></div>
+      <div class="health-stat"><div class="k">健康状况</div><div class="v">${HEALTH_PROFILE.conditions}</div></div>
+      <div class="health-stat"><div class="k">用药</div><div class="v">${HEALTH_PROFILE.medications}</div></div>
+    </div>
+  </div>
+
+  <div class="profile-section">
+    <div class="profile-group">
+      <div class="pg-row" onclick="toggleNotifications()">
+        <div class="pg-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2a6 6 0 00-6 6c0 5-2 7-2 7h16s-2-2-2-7a6 6 0 00-6-6zm0 20a3 3 0 003-3H9a3 3 0 003 3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
+        <div class="pg-body"><div class="pg-title">通知提醒</div><div class="pg-desc">训练与经期提醒</div></div>
+        <label class="switch" onclick="event.stopPropagation();toggleNotifications()"><input type="checkbox" ${s.notifications?'checked':''}><span class="slider"></span></label>
+      </div>
+      <div class="pg-row" onclick="exportData()">
+        <div class="pg-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="pg-body"><div class="pg-title">导出数据</div><div class="pg-desc">导出全部数据为 JSON</div></div>
+        <div class="pg-arrow"><svg viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      </div>
+      <div class="pg-row" onclick="resetData()">
+        <div class="pg-icon" style="background:#FFE0E0"><svg viewBox="0 0 24 24" fill="none" style="color:#E63946"><path d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-7 0v12a1 1 0 001 1h6a1 1 0 001-1V7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="pg-body"><div class="pg-title" style="color:#E63946">重置数据</div><div class="pg-desc">清空全部本地数据</div></div>
+        <div class="pg-arrow"><svg viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;color:var(--text-3);font-size:11.5px;padding:8px 0 4px">
+    健康教练 PWA · v1.0<br>所有数据保存在本地
+  </div>`;
+
+  document.getElementById("profile-view").innerHTML = html;
+}
+
+function toggleTravelMode(){
+  const s = getSettings();
+  s.travelMode = (s.travelMode==='travel')? 'home':'travel';
+  setSettings(s);
+  renderProfile();
+  toast(s.travelMode==='travel'?'已切换至出差模式':'已切换至居家模式');
+}
+function toggleNotifications(){
+  const s = getSettings();
+  s.notifications = !s.notifications;
+  setSettings(s);
+  renderProfile();
+  if(s.notifications){ requestNotifPermission(); }
+  toast(s.notifications?'已开启通知':'已关闭通知');
+}
+
+/* ============================================================
+   Tab 切换
+   ============================================================ */
+function switchTab(name){
+  document.querySelectorAll(".tab-content").forEach(el=>el.classList.remove("active"));
+  document.querySelectorAll(".tab-btn").forEach(el=>el.classList.remove("active"));
+  document.getElementById("tab-"+name).classList.add("active");
+  document.querySelector('.tab-btn[data-tab="'+name+'"]').classList.add("active");
+  if(name==="today") renderToday();
+  if(name==="plan") renderPlan();
+  if(name==="data") renderData();
+  if(name==="profile") renderProfile();
+  window.scrollTo(0,0);
+}
+
+/* ============================================================
+   二级页面：运动详情
+   ============================================================ */
+function openExerciseInfo(category, name, exId){
+  // 如果有动作ID且动作库中存在，打开详细动作页
+  if(exId && EXERCISES[exId]){
+    openExercise(exId);
+    return;
+  }
+  // 否则根据类别显示通用运动指导
+  const info = getExerciseInfoByCategory(category, name);
+  const body = document.getElementById("sec-exercise-body");
+  let stepsHtml = "";
+  info.steps.forEach(s=>{
+    stepsHtml += `<div class="step-item">
+      <div class="step-num">${s.step}</div>
+      <div><div class="st">${s.title}</div><div class="sd">${s.desc}</div></div>
+    </div>`;
+  });
+  body.innerHTML = `
+    <div class="ex-hero">
+      <div class="name">${info.name}</div>
+      <div class="target">${info.subtitle}</div>
+      <div class="ex-benefit">${info.benefit}</div>
+    </div>
+    <div class="ex-section">
+      <h4><span class="ln"></span>训练参数</h4>
+      <div class="ex-card-box">
+        <div class="sr-grid">
+          <div class="sr-item"><div class="v">${info.duration}</div><div class="k">建议时长</div></div>
+          <div class="sr-item"><div class="v">${info.intensity}</div><div class="k">强度</div></div>
+          <div class="sr-item"><div class="v">${info.hrZone}</div><div class="k">目标心率</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="ex-section">
+      <h4><span class="ln"></span>运动指导</h4>
+      <div class="ex-card-box"><div class="step-list">${stepsHtml}</div></div>
+    </div>
+    <div class="ex-section">
+      <h4><span class="ln"></span>安全警示</h4>
+      <div class="warn-box">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L1 21h22L12 2zm0 6v6m0 3v.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div>${info.warning}</div>
+      </div>
+    </div>
+    <div class="ex-section">
+      <button class="btn btn-primary" onclick="startWorkoutByCategory('${category}','${name}')">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        开始跟练（计时器）
+      </button>
+    </div>`;
+  openSecondary("sec-exercise");
+}
+
+// 按类别获取运动指导信息
+function getExerciseInfoByCategory(category, name){
+  const guides = {
+    cardio: {
+      name: name || "动感单车",
+      subtitle: "有氧运动 · 心肺训练",
+      benefit: "改善胰岛素敏感性、消耗热量、降低内脏脂肪、提升心肺功能。对PCOS和胰岛素抵抗有直接改善作用。",
+      duration: "10-20分钟",
+      intensity: "低-中",
+      hrZone: "110-120bpm",
+      steps: [
+        {step:1, title:"调整座椅", desc:"坐在座垫上，脚踩踏板至最低点时膝盖微屈（不完全伸直），保留一点弯度。背部微前倾约15度。"},
+        {step:2, title:"调阻力", desc:"调到最低或倒数第二档，感觉踩起来很轻松。第一阶段不要追求阻力。"},
+        {step:3, title:"开始踩", desc:"保持节奏均匀，速度以'能边踩边正常说话'为准。核心微微收紧（想象肚脐往脊柱方向靠），不要弯腰驼背。"},
+        {step:4, title:"监测心率", desc:"注意心率，第一阶段不超过120bpm。感觉喘不上来就减速，不要硬撑。心率超过目标就减速。"},
+        {step:5, title:"呼吸与节奏", desc:"保持自然呼吸，不要憋气。踩踏时呼气，回踏时吸气。保持匀速，不要忽快忽慢。"}
+      ],
+      warning: "心率超过目标上限立即减速。不要在清晨6-9点运动（血压晨峰）。避免空腹运动。如有胸痛、头晕、眼前发黑，立即停止并就医。"
+    },
+    balance: {
+      name: name || "平衡训练",
+      subtitle: "平衡与稳定 · 防跌倒训练",
+      benefit: "改善站立不稳和下楼梯害怕的问题，增强核心稳定性，预防跌倒。每天坚持15分钟，1-3个月可见明显改善。",
+      duration: "5-15分钟",
+      intensity: "极低",
+      hrZone: "正常静息",
+      steps: [
+        {step:1, title:"坐位平衡", desc:"坐在硬椅子上不靠椅背，双脚平放地面。双手放在大腿上，身体微微左右晃动，感受重心变化。尝试双手离开大腿向两侧平举，保持身体稳定。"},
+        {step:2, title:"扶站站立", desc:"站在稳固的餐桌或墙面旁边，双手轻扶。双脚与肩同宽，身体站直。尝试缓慢松开一只手保持10秒，再换另一只手。"},
+        {step:3, title:"重心转移", desc:"双手轻扶桌面，重心慢慢向左移再向右移，各5次。然后重心慢慢向前（脚尖方向）再向后（脚跟方向），各5次。"},
+        {step:4, title:"原地踏步", desc:"扶着桌面，原地缓慢抬脚踏步。逐渐尝试加快一点速度，保持身体不晃。"},
+        {step:5, title:"循序渐进", desc:"从坐位平衡开始，能稳定完成后再进入扶站站立。不要急于进入单脚站立等高难度动作。"}
+      ],
+      warning: "必须有稳固支撑物！穿防滑鞋！地面干燥无杂物！出现头晕腿软立即停止！初学者禁止闭眼训练！禁止在床边或软沙发旁训练。"
+    },
+    stretch: {
+      name: name || "运动后拉伸",
+      subtitle: "柔韧性训练 · 恢复放松",
+      benefit: "运动后拉伸可减少肌肉酸痛、加速恢复、改善关节活动范围、预防运动损伤。长期坚持可改善体态。",
+      duration: "5-10分钟",
+      intensity: "低",
+      hrZone: "正常静息",
+      steps: [
+        {step:1, title:"大腿前侧拉伸", desc:"站立扶墙，右手抓右脚踝拉向臀部，保持20秒，换腿。感受大腿前侧的牵拉感，不要弹振。"},
+        {step:2, title:"大腿后侧拉伸", desc:"坐地，右腿伸直，左脚抵右大腿内侧，身体向前够右脚尖，保持20秒，换腿。够不到脚尖没关系，到有牵拉感即可。"},
+        {step:3, title:"臀部拉伸", desc:"坐地，右腿弯曲在前，左腿伸直在后，上身前倾，保持20秒，换腿。感受臀部的拉伸。"},
+        {step:4, title:"肩颈拉伸", desc:"右手过头绕到左侧，左手轻压右肘，头部向左倾，保持15秒，换边。然后双肩同时向前画大圈10次，再向后10次。"},
+        {step:5, title:"呼吸与放松", desc:"每个拉伸动作保持时深呼吸，不要憋气。拉伸到有牵拉感即可，不应有疼痛感。如有疼痛立即减轻幅度。"}
+      ],
+      warning: "拉伸到有牵拉感即可，不应有疼痛感。不要弹振式拉伸。高血压患者拉伸时不要低头过久。每个动作保持时正常呼吸，不要憋气。"
+    }
+  };
+  return guides[category] || {
+    name: name || "运动",
+    subtitle: "运动训练",
+    benefit: "保持规律运动有助于改善代谢健康。",
+    duration: "按计划执行",
+    intensity: "按计划执行",
+    hrZone: "按目标心率",
+    steps: [{step:1, title:"按计划执行", desc:"请参考今日训练清单中的说明执行。"}],
+    warning: "如有不适请立即停止。"
+  };
+}
+
+function startWorkoutByCategory(category, name){
+  // 启动计时器模式（正向计时），用于有氧/平衡/拉伸
+  closeSecondary("sec-exercise");
+  Timer.exId = null;
+  Timer.mode = "countup";
+  Timer.currentSet = 1;
+  Timer.totalSets = 1;
+  Timer.restSeconds = 0;
+  Timer.categoryName = name;
+  startWorkout(null);
+}
+
+function openExercise(exId){
+  const ex = EXERCISES[exId];
+  if(!ex){ toast("该动作暂无详情"); return; }
+  const body = document.getElementById("sec-exercise-body");
+  let stepsHtml = "";
+  ex.steps.forEach(s=>{
+    stepsHtml += `<div class="step-item">
+      <div class="step-num">${s.step}</div>
+      <div><div class="st">${s.title}</div><div class="sd">${s.desc}</div></div>
+    </div>`;
+  });
+  body.innerHTML = `
+    <div class="ex-hero">
+      <div class="name">${ex.name}</div>
+      <div class="target">目标肌群：${ex.targetMuscle}</div>
+      <div class="ex-benefit">${ex.benefit}</div>
+    </div>
+    <div class="ex-section">
+      <h4><span class="ln"></span>训练参数</h4>
+      <div class="ex-card-box">
+        <div class="sr-grid">
+          <div class="sr-item"><div class="v">${ex.sets}</div><div class="k">组数</div></div>
+          <div class="sr-item"><div class="v">${ex.reps}</div><div class="k">次数</div></div>
+          <div class="sr-item"><div class="v">${ex.restSeconds}s</div><div class="k">组间休息</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="ex-section">
+      <h4><span class="ln"></span>动作步骤</h4>
+      <div class="ex-card-box"><div class="step-list">${stepsHtml}</div></div>
+    </div>
+    <div class="ex-section">
+      <h4><span class="ln"></span>安全警示</h4>
+      <div class="warn-box">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L1 21h22L12 2zm0 6v6m0 3v.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div>${ex.warning}</div>
+      </div>
+    </div>
+    <div class="ex-section">
+      <button class="btn btn-primary" onclick="startWorkout('${exId}')">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        开始此动作跟练
+      </button>
+    </div>`;
+  openSecondary("sec-exercise");
+}
+
+function openSecondary(id){
+  document.getElementById(id).classList.add("show");
+}
+function closeSecondary(id){
+  document.getElementById(id).classList.remove("show");
+}
+
+/* ============================================================
+   二级页面：视频推荐
+   ============================================================ */
+function openVideos(){
+  const plan = getTodayPlan();
+  const body = document.getElementById("sec-videos-body");
+  let html = `<div class="vid-section">
+    <h4><span class="ln"></span>类型 A · 完整替代今日训练 <span class="hint">跟着视频完成全部训练</span></h4>`;
+  plan.day.videosTypeA.forEach(id=>{
+    html += renderVideoCard(VIDEOS[id]);
+  });
+  html += `</div>`;
+  if(plan.day.videosTypeB && plan.day.videosTypeB.length){
+    html += `<div class="vid-section">
+      <h4><span class="ln"></span>类型 B · 替代今日抗阻部分 <span class="hint">用视频替代力量训练</span></h4>`;
+    plan.day.videosTypeB.forEach(id=>{
+      html += renderVideoCard(VIDEOS[id]);
+    });
+    html += `</div>`;
+  }
+  body.innerHTML = html;
+  openSecondary("sec-videos");
+}
+function renderVideoCard(v){
+  if(!v) return "";
+  const tagsHtml = v.tags.slice(0,3).map(t=>`<span class="vid-tag">${t}</span>`).join("");
+  const dur = v.duration;
+  return `<div class="vid-card" onclick="openBilibili('${v.url}')">
+    <div class="vid-thumb">
+      <div class="play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
+      <div class="dur">${dur}</div>
+    </div>
+    <div class="vid-body">
+      <div class="vid-title">${v.title}</div>
+      <div class="vid-meta"><span>${v.up}</span><span class="v">${v.views} 播放</span></div>
+      <div class="vid-tags">${tagsHtml}</div>
+    </div>
+  </div>`;
+}
+
+// 跳转B站：尝试打开App，回退到浏览器
+function openBilibili(url){
+  // 先尝试通过window.open打开（在移动端会尝试唤起App）
+  const win = window.open(url, '_blank');
+  // 如果被拦截（win为null），使用location跳转
+  if(!win){
+    window.location.href = url;
+  }
+}
+
+/* ============================================================
+   跟练模式 / 计时器
+   ============================================================ */
+let Timer = {
+  exId: null,
+  mode: "countup",       // countup | countdown
+  target: 60,             // 倒计时目标秒数
+  base: 0,                // 已累计秒数（暂停前）
+  running: false,
+  startedAt: null,        // 本次启动时间戳
+  currentSet: 1,
+  totalSets: 3,
+  restSeconds: 45,
+  intervalId: null,
+  inRest: false           // 是否处于组间休息
+};
+
+function loadTimer(){
+  const t = Store.get(KEYS.timer, null);
+  if(t){ Timer = Object.assign(Timer, t, { running:false, startedAt:null, intervalId:null }); }
+}
+function saveTimer(){ Store.set(KEYS.timer, Timer); }
+function clearTimer(){ Store.del(KEYS.timer); }
+
+function getElapsed(){
+  if(Timer.running && Timer.startedAt){
+    return Timer.base + Math.floor((Date.now()-Timer.startedAt)/1000);
+  }
+  return Timer.base;
+}
+function getDisplaySec(){
+  const e = getElapsed();
+  if(Timer.mode === "countdown"){
+    return Math.max(0, Timer.target - e);
+  }
+  return e;
+}
+function fmtTime(sec){
+  const m = Math.floor(sec/60), s = sec%60;
+  return pad(m)+":"+pad(s);
+}
+
+function startWorkout(exId){
+  const ex = EXERCISES[exId];
+  if(!ex){ toast("无此动作"); return; }
+  Timer = {
+    exId: exId,
+    mode: "countdown",
+    target: ex.restSeconds || 60,
+    base: 0,
+    running: false,
+    startedAt: null,
+    currentSet: 1,
+    totalSets: ex.sets || 3,
+    restSeconds: ex.restSeconds || 45,
+    intervalId: null,
+    inRest: false,
+    exName: ex.name
+  };
+  saveTimer();
+  showWorkout(ex);
+}
+function showWorkout(ex){
+  document.getElementById("wo-exercise-name").textContent = ex? ex.name : (Timer.exName||"跟练");
+  document.getElementById("wo-exercise-sub").textContent = ex? (ex.reps+" · 共"+(ex.sets||3)+"组") : (Timer.totalSets+"组");
+  updateWorkoutModeUI();
+  updateWorkoutUI();
+  document.getElementById("workout").classList.add("show");
+  if(Timer.running){ startInterval(); }
+}
+function exitWorkout(){
+  if(Timer.running){ pauseTimer(); }
+  document.getElementById("workout").classList.remove("show");
+}
+function setWorkoutMode(mode){
+  Timer.mode = mode;
+  if(mode === "countdown"){
+    Timer.base = 0;
+    Timer.target = Timer.restSeconds || 60;
+  } else {
+    Timer.base = 0;
+  }
+  Timer.running = false;
+  Timer.startedAt = null;
+  stopInterval();
+  saveTimer();
+  updateWorkoutModeUI();
+  updateWorkoutUI();
+}
+function updateWorkoutModeUI(){
+  document.getElementById("wo-mode-countdown").classList.toggle("on", Timer.mode==="countdown");
+  document.getElementById("wo-mode-countup").classList.toggle("on", Timer.mode==="countup");
+}
+function toggleTimer(){
+  if(Timer.running){ pauseTimer(); }
+  else { resumeTimer(); }
+}
+function resumeTimer(){
+  Timer.running = true;
+  Timer.startedAt = Date.now();
+  saveTimer();
+  startInterval();
+  updateWorkoutUI();
+}
+function pauseTimer(){
+  Timer.base = getElapsed();
+  Timer.running = false;
+  Timer.startedAt = null;
+  stopInterval();
+  saveTimer();
+  updateWorkoutUI();
+}
+function startInterval(){
+  stopInterval();
+  Timer.intervalId = setInterval(()=>{
+    updateWorkoutUI();
+    if(Timer.mode === "countdown"){
+      const sec = getDisplaySec();
+      if(sec <= 0){
+        onCountdownEnd();
+      }
+    }
+  }, 1000);
+}
+function stopInterval(){
+  if(Timer.intervalId){ clearInterval(Timer.intervalId); Timer.intervalId = null; }
+}
+function onCountdownEnd(){
+  // 震动 + 通知
+  if(navigator.vibrate){ navigator.vibrate(200); }
+  showNotif("休息结束", "开始下一组训练！");
+  if(Timer.inRest){
+    Timer.inRest = false;
+    Timer.currentSet = Math.min(Timer.currentSet+1, Timer.totalSets);
+    if(Timer.currentSet >= Timer.totalSets){
+      // 全部完成
+      completeExercise();
+      return;
+    }
+    Timer.base = 0;
+    Timer.running = false;
+    Timer.startedAt = null;
+    stopInterval();
+  } else {
+    // 进入休息
+    Timer.inRest = true;
+    Timer.base = 0;
+    Timer.target = Timer.restSeconds;
+    Timer.running = false;
+    Timer.startedAt = null;
+    stopInterval();
+  }
+  saveTimer();
+  updateWorkoutUI();
+}
+function skipSet(){
+  if(Timer.inRest){
+    Timer.inRest = false;
+    Timer.currentSet = Math.min(Timer.currentSet+1, Timer.totalSets);
+  } else {
+    Timer.inRest = true;
+  }
+  Timer.base = 0;
+  Timer.running = false;
+  Timer.startedAt = null;
+  stopInterval();
+  saveTimer();
+  updateWorkoutUI();
+}
+function viewExerciseGuide(){
+  if(!Timer.exId){ toast("无动作详情"); return; }
+  exitWorkout();
+  openExercise(Timer.exId);
+}
+function completeExercise(){
+  pauseTimer();
+  // 标记清单完成
+  if(Timer.exId){
+    const { adj } = getTodayExercisesWithId();
+    adj.exercises.forEach((e)=>{
+      if(e.exerciseId === Timer.exId && !e.skip){
+        setChecklistItem(todayStr(), e._id, true, "opt");
+      }
+    });
+  }
+  clearTimer();
+  document.getElementById("workout").classList.remove("show");
+  renderToday();
+  toast("动作完成！");
+  // 若今日全部完成则弹反馈
+  const comp = getCompletionPercent(todayStr());
+  if(comp.pct >= 100){
+    setTimeout(()=> openFeedback(true), 400);
+  }
+}
+function updateWorkoutUI(){
+  const sec = getDisplaySec();
+  document.getElementById("wo-time").textContent = fmtTime(sec);
+  const subEl = document.getElementById("wo-sub");
+  if(Timer.inRest){
+    subEl.textContent = "组间休息中";
+  } else if(Timer.mode === "countdown"){
+    subEl.textContent = Timer.running? "训练中..." : "准备开始训练";
+  } else {
+    subEl.textContent = Timer.running? "正向计时中" : "准备开始";
+  }
+  // 进度
+  const fillPct = Timer.mode==="countdown"
+    ? (1 - sec/Timer.target)*100
+    : 0;
+  document.getElementById("wo-fill").style.width = Math.max(0,Math.min(100,fillPct))+"%";
+  document.getElementById("wo-sets-done").textContent = "第 "+Timer.currentSet+" / "+Timer.totalSets+" 组";
+  document.getElementById("wo-sets-rest").textContent = Timer.inRest? "休息中" : ("休息 "+Timer.restSeconds+"s");
+  document.getElementById("wo-start-label").textContent = Timer.running? "暂停" : (Timer.base>0?"继续":"开始");
+  // 按钮图标
+  const btn = document.getElementById("wo-start-btn");
+  btn.querySelector("svg").innerHTML = Timer.running
+    ? '<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>'
+    : '<path d="M8 5v14l11-7z"/>';
+}
+
+/* ============================================================
+   模态框：经期
+   ============================================================ */
+let periodForm = { flow:"", pain:"" };
+function openPeriodModal(){
+  periodForm = { flow:"", pain:"" };
+  document.getElementById("period-date").value = todayStr();
+  syncSeg("period-flow", "");
+  syncSeg("period-pain", "");
+  openModal("mask-period");
+}
+function savePeriod(){
+  if(!periodForm.flow){ toast("请选择经量"); return; }
+  if(!periodForm.pain){ toast("请选择痛经程度"); return; }
+  const date = document.getElementById("period-date").value || todayStr();
+  const list = Store.get(KEYS.period, []);
+  // 同日替换
+  const idx = list.findIndex(p=>p.date===date);
+  const rec = { date, flow:periodForm.flow, pain:periodForm.pain };
+  if(idx>=0) list[idx]=rec; else list.push(rec);
+  Store.set(KEYS.period, list);
+  closeModal("mask-period");
+  renderToday();
+  toast("经期记录已保存");
+}
+
+/* 模态框：地屈孕酮 */
+let dyroForm = { type:"" };
+function openDydroModal(){
+  dyroForm = { type:"" };
+  document.getElementById("dydro-date").value = todayStr();
+  document.getElementById("dyro-note").value = "";
+  syncSeg("dyro-type", "");
+  openModal("mask-dydro");
+}
+function saveDydro(){
+  if(!dyroForm.type){ toast("请选择记录类型"); return; }
+  const date = document.getElementById("dydro-date").value || todayStr();
+  const note = document.getElementById("dyro-note").value || "";
+  const list = Store.get("hc_dydro", []);
+  const rec = { date, type:dyroForm.type, note };
+  // 同日同类型替换
+  const idx = list.findIndex(d=>d.date===date && d.type===dyroForm.type);
+  if(idx>=0) list[idx]=rec; else list.push(rec);
+  list.sort((a,b)=> a.date<b.date?-1:1);
+  Store.set("hc_dydro", list);
+  closeModal("mask-dydro");
+  renderToday();
+  toast("地屈孕酮记录已保存");
+}
+
+/* 模态框：体重 */
+function openWeightModal(){
+  document.getElementById("weight-date").value = todayStr();
+  document.getElementById("weight-value").value = "";
+  openModal("mask-weight");
+}
+function saveWeight(){
+  const v = parseFloat(document.getElementById("weight-value").value);
+  if(!v || v<20 || v>300){ toast("请输入有效体重"); return; }
+  const date = document.getElementById("weight-date").value || todayStr();
+  const list = Store.get(KEYS.weight, []);
+  const idx = list.findIndex(w=>w.date===date);
+  const rec = { date, weight:v };
+  if(idx>=0) list[idx]=rec; else list.push(rec);
+  list.sort((a,b)=> a.date<b.date?-1:1);
+  Store.set(KEYS.weight, list);
+  closeModal("mask-weight");
+  renderData();
+  renderProfile();
+  toast("体重已记录");
+}
+
+/* 模态框：血压 */
+function openBpModal(){
+  document.getElementById("bp-date").value = todayStr();
+  document.getElementById("bp-sys").value = "";
+  document.getElementById("bp-dia").value = "";
+  openModal("mask-bp");
+}
+function saveBP(){
+  const sys = parseInt(document.getElementById("bp-sys").value);
+  const dia = parseInt(document.getElementById("bp-dia").value);
+  if(!sys || !dia || sys<60 || sys>250 || dia<40 || dia>180){ toast("请输入有效血压值"); return; }
+  const date = document.getElementById("bp-date").value || todayStr();
+  const list = Store.get(KEYS.bp, []);
+  const idx = list.findIndex(b=>b.date===date);
+  const rec = { date, systolic:sys, diastolic:dia };
+  if(idx>=0) list[idx]=rec; else list.push(rec);
+  list.sort((a,b)=> a.date<b.date?-1:1);
+  Store.set(KEYS.bp, list);
+  closeModal("mask-bp");
+  renderData();
+  toast("血压已记录");
+}
+
+/* 模态框：反馈 */
+let feedbackForm = { level:"min", feeling:"ok" };
+function openFeedback(celebrate){
+  feedbackForm = { level:"min", feeling:"ok" };
+  document.getElementById("fb-celebrate").style.display = celebrate? "flex":"none";
+  document.getElementById("fb-hr").value = "";
+  document.getElementById("fb-notes").value = "";
+  syncSeg("fb-level","min");
+  syncSeg("fb-feeling","ok");
+  openModal("mask-feedback");
+}
+function saveFeedback(){
+  const hr = parseInt(document.getElementById("fb-hr").value) || null;
+  const notes = document.getElementById("fb-notes").value.trim();
+  const notes2 = feedbackForm.feeling;
+  const duration = Timer.totalSets? (Timer.totalSets*Timer.restSeconds) : 30;
+  const rec = {
+    date: todayStr(),
+    level: feedbackForm.level,
+    feeling: feedbackForm.feeling,
+    hr: hr,
+    notes: notes,
+    duration: duration,
+    completion: getCompletionPercent(todayStr()).pct/100
+  };
+  const list = Store.get(KEYS.feedback, []);
+  const idx = list.findIndex(f=>f.date===rec.date);
+  if(idx>=0) list[idx]=rec; else list.push(rec);
+  Store.set(KEYS.feedback, list);
+  closeModal("mask-feedback");
+  toast("反馈已保存，继续保持！");
+}
+function skipFeedback(){ closeModal("mask-feedback"); }
+
+/* 模态框：阶段设置 */
+function openPhaseModal(){
+  const s = getSettings();
+  syncSeg("phase-set", String(s.phase||1));
+  document.getElementById("phase-startdate").value = s.startDate || todayStr();
+  openModal("mask-phase");
+}
+function savePhase(){
+  const s = getSettings();
+  s.phase = parseInt(currentSegVal("phase-set")) || calcPhase();
+  s.startDate = document.getElementById("phase-startdate").value || todayStr();
+  setSettings(s);
+  closeModal("mask-phase");
+  renderToday(); renderPlan(); renderProfile();
+  toast("阶段设置已更新");
+}
+
+/* 模态框通用：seg 控件 */
+function syncSeg(containerId, val){
+  const c = document.getElementById(containerId);
+  if(!c) return;
+  c.querySelectorAll("button").forEach(b=>{
+    b.classList.toggle("on", b.dataset.v===val);
+  });
+}
+function currentSegVal(containerId){
+  const c = document.getElementById(containerId);
+  const on = c.querySelector("button.on");
+  return on? on.dataset.v : "";
+}
+// seg 点击委托
+document.addEventListener("click", (e)=>{
+  const btn = e.target.closest(".seg button");
+  if(!btn) return;
+  const seg = btn.parentElement;
+  seg.querySelectorAll("button").forEach(b=>b.classList.remove("on"));
+  btn.classList.add("on");
+  const val = btn.dataset.v;
+  // 同步到表单状态
+  switch(seg.id){
+    case "period-flow": periodForm.flow=val; break;
+    case "period-pain": periodForm.pain=val; break;
+    case "dyro-type": dyroForm.type=val; break;
+    case "fb-level": feedbackForm.level=val; break;
+    case "fb-feeling": feedbackForm.feeling=val; break;
+  }
+});
+
+function openModal(id){
+  var el = document.getElementById(id) || document.querySelector('#'+id);
+  if(el) el.classList.add("show");
+}
+function closeModal(id){
+  var el = document.getElementById(id) || document.querySelector('#'+id);
+  if(el) el.classList.remove("show");
+}
+
+/* 点击遮罩关闭 */
+document.querySelectorAll(".modal-mask").forEach(function(m){
+  m.addEventListener("click",function(e){
+    if(e.target===m) m.classList.remove("show");
+  });
+});
+
+/* ============================================================
+   导出 / 重置
+   ============================================================ */
+function exportData(){
+  const data = {};
+  Object.keys(KEYS).forEach(k=>{
+    data[KEYS[k]] = Store.get(KEYS[k], null);
+  });
+  data._exportTime = new Date().toISOString();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type:"application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "health-coach-data-"+todayStr()+".json";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  toast("数据已导出");
+}
+function resetData(){
+  if(!confirm("确定清空全部数据？此操作不可恢复。")) return;
+  Object.keys(KEYS).forEach(k=> Store.del(KEYS[k]));
+  calMonthOffset = 0;
+  Timer = { exId:null, mode:"countup", target:60, base:0, running:false, startedAt:null, currentSet:1, totalSets:3, restSeconds:45, intervalId:null, inRest:false };
+  renderToday(); renderPlan(); renderData(); renderProfile();
+  toast("数据已重置");
+}
+
+/* ============================================================
+   通知 / 震动
+   ============================================================ */
+function requestNotifPermission(){
+  if(!("Notification" in window)) return;
+  if(Notification.permission === "default"){
+    Notification.requestPermission();
+  }
+}
+function showNotif(title, body){
+  if(!("Notification" in window)) { toast(title+": "+body); return; }
+  if(Notification.permission === "granted"){
+    try{ new Notification(title, { body, icon:"icon.svg" }); }catch(e){ toast(title); }
+  } else {
+    toast(title+": "+body);
+  }
+}
+
+/* Toast */
+let toastTimer = null;
+function toast(msg){
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> el.classList.remove("show"), 1800);
+}
+
+/* ============================================================
+   页面可见性 / 后台计时器恢复
+   ============================================================ */
+document.addEventListener("visibilitychange", ()=>{
+  if(!document.hidden && Timer.running){
+    // 后台返回后重新校准显示
+    updateWorkoutUI();
+    if(Timer.mode==="countdown" && getDisplaySec()<=0){
+      onCountdownEnd();
+    }
+  }
+});
+
+/* ============================================================
+   Service Worker 注册
+   ============================================================ */
+if("serviceWorker" in navigator){
+  window.addEventListener("load", ()=>{
+    navigator.serviceWorker.register("sw.js").catch(()=>{});
+  });
+}
+
+/* ============================================================
+   初始化
+   ============================================================ */
+function init(){
+  // 首次访问初始化设置
+  if(!localStorage.getItem(KEYS.settings)){
+    setSettings(DEFAULT_SETTINGS);
+  }
+  loadTimer();
+  // 若有未完成计时器且动作存在，恢复界面
+  if(Timer.exId && EXERCISES[Timer.exId]){
+    // 不自动弹出，但准备好状态
+  }
+  autoCheckin();
+  renderToday();
+  // 今日日期默认填入经期表单
+  document.getElementById("period-date").value = todayStr();
+}
+init();
+</script>
+</body>
+</html>
