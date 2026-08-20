@@ -1,18 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="bg1" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#F7FAF9"/>
       <stop offset="100%" stop-color="#E8F5F0"/>
     </linearGradient>
   </defs>
-  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <!-- 装饰圆环 -->
-  <circle cx="256" cy="256" r="150" fill="none" stroke="#8AE2C9" stroke-width="14" opacity="0.18"/>
-  <circle cx="256" cy="256" r="108" fill="none" stroke="#8AE2C9" stroke-width="10" opacity="0.35"/>
-  <!-- 心跳线 -->
-  <path d="M96 268 L176 268 L206 208 L240 348 L276 188 L310 308 L340 268 L416 268"
-        fill="none" stroke="#8AE2C9" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
-  <!-- 端点圆 -->
-  <circle cx="96" cy="268" r="8" fill="#8AE2C9" opacity="0.5"/>
-  <circle cx="416" cy="268" r="8" fill="#8AE2C9" opacity="0.5"/>
+  <rect width="512" height="512" rx="112" fill="url(#bg1)"/>
+  <!-- 外圈装饰环 -->
+  <circle cx="256" cy="256" r="200" fill="none" stroke="#8AE2C9" stroke-width="4" opacity="0.15"/>
+  <!-- 圆环主体（数字9的上半圆环） -->
+  <circle cx="256" cy="216" r="88" fill="none" stroke="#8AE2C9" stroke-width="56"/>
+  <!-- 数字9的竖线尾部 -->
+  <rect x="228" y="216" width="56" height="152" rx="28" fill="#8AE2C9"/>
+  <!-- 底部心跳线 -->
+  <path d="M120 428 L180 428 L200 408 L220 448 L246 388 L270 438 L290 428 L392 428"
+        fill="none" stroke="#8AE2C9" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.35"/>
 </svg>
